@@ -4,6 +4,7 @@ import com.ilia.pokedex.application.port.in.GetLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.ListLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.SyncPokemonUseCase;
 import com.ilia.pokedex.application.port.in.SyncPokemonUseCase.SyncResult;
+import com.ilia.pokedex.config.SecurityConfig;
 import com.ilia.pokedex.domain.exception.ExternalServiceException;
 import com.ilia.pokedex.domain.exception.InvalidRequestException;
 import com.ilia.pokedex.domain.exception.ResourceNotFoundException;
@@ -12,8 +13,10 @@ import com.ilia.pokedex.domain.model.PageResult;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
@@ -35,7 +38,10 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
+/** Everything under {@code /api/v1/local-pokemon} is protected, so these tests run as an authenticated user. */
 @WebMvcTest(LocalPokemonController.class)
+@Import(SecurityConfig.class)
+@WithMockUser
 class LocalPokemonControllerTest {
 
     private static final String SYNC = "/api/v1/local-pokemon/sync";

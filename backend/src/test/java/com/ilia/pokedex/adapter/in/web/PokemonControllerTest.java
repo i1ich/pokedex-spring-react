@@ -2,6 +2,7 @@ package com.ilia.pokedex.adapter.in.web;
 
 import com.ilia.pokedex.application.port.in.GetPokemonDetailsUseCase;
 import com.ilia.pokedex.application.port.in.ListPokemonUseCase;
+import com.ilia.pokedex.config.SecurityConfig;
 import com.ilia.pokedex.domain.exception.ExternalServiceException;
 import com.ilia.pokedex.domain.exception.InvalidRequestException;
 import com.ilia.pokedex.domain.exception.ResourceNotFoundException;
@@ -11,6 +12,7 @@ import com.ilia.pokedex.domain.model.PokemonSummary;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
@@ -30,6 +32,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @WebMvcTest(PokemonController.class)
+@Import(SecurityConfig.class)
 class PokemonControllerTest {
 
     @Autowired
