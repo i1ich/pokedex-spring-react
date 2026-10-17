@@ -93,3 +93,30 @@ Chronological log of the prompts used to build this project with Claude (agentic
 - `AuthenticationFailedException` also sends `WWW-Authenticate: Bearer`, so login failures and filter-chain 401s look identical to a client.
 - The seed hash was generated with the real encoder and is asserted in both `BCryptPasswordHasherTest` (literal hash) and `AuthFlowIT` (login as `demo`), rather than trusting a hash copied from the model's memory.
 - First attempt at the tests used `"x".repeat(50)` inside `@ValueSource`, which is not a constant expression and did not compile; those cases became separate tests. A strict-stubs failure (`PotentialStubbingProblem`) in the "same message" test was fixed by stubbing the throw-away-hash comparison too, not by loosening the mock. Shell heredocs and `git commit -F -` again mangled multi-line input in PowerShell; files were written with the editor tool and the commit message passed from a file.
+
+---
+
+## 005 — T9 GenAI section (subagents)
+
+**Prompt (summarised):** T9 from `docs/TASKS.md` was run in three phases by separate agents so that the AI output is genuine and the review independent.
+
+1. A subagent wrote only `genai/prompt.md`: a realistic prompt for a task-management REST API (Java 21, Spring Boot 3.5, JPA, PostgreSQL, JWT already provided, Bean Validation) with layering, validation rules, ownership, pagination with a maximum, problem+json errors, status codes, required tests and an output format of complete files plus assumptions. It was explicitly not to be weakened to provoke mistakes.
+2. The orchestrator gave that text, and nothing else, to a fresh Claude Sonnet 5.5 subagent in a single pass; its answer was split into `genai/output/` unedited.
+3. The same reviewer subagent was then asked to validate it for real (compile, run, read every line against the prompt, probe), write `review.md` and `README.md`, and build `genai/corrected/` test-first with separate `[red]` and `[green]` commits.
+
+**Output:**
+
+- `genai/prompt.md` (39 lines), `genai/output/` (16 main files, migration, `application.yml`, `pom.xml`, 2 test classes, `RESPONSE.md`).
+- `genai/review.md`: method, compile/test results, 13-row issue table, edge cases, authentication and ownership, validation, what the AI got right, lessons.
+- `genai/corrected/`: the output plus fixes (`StrictIsoDateDeserializer`, `ClockConfig` with `app.time-zone`, service-side paging limits, a 406 handler, Jackson `fail-on-numbers-for-enums`, single due-date rule in the service) and new tests: `TaskControllerHardeningTest`, `DueDateClockTest`, `ClockConfigTest`, `TaskServicePagingTest`, and two Testcontainers ITs (`TaskRepositoryIT`, `TaskApiIT`).
+- Results: the raw output does not compile its tests; with a one-word fix its 43 tests pass. Red commit: 62 unit/web tests, 16 failing; green commit: 61 unit/web tests and 11 ITs, all passing.
+
+**Review notes:**
+
+- Rejected as claimed by the AI output: the implied "complete, compilable files" (the test code does not compile: package-private `TestSecurityConfig` used across packages) and "43 passing tests", which nobody could have known without building it.
+- Rejected design in the AI output: the due-date rule implemented twice (Bean Validation `@FutureOrPresent` on the DTO with the JVM clock, plus a service check with an injected `Clock` that is unreachable over HTTP) and a `Clock` bound to the host time zone. Replaced by one rule in the service and a configured zone (default UTC). The AI's controller test that passed only through the dead-code ordering was rewritten to check the exception mapping.
+- Found only by running: an `Accept: application/xml` request returns 500 because the catch-all handler swallows `HttpMediaTypeNotAcceptableException`; `status` is accepted as an enum ordinal; `due_date` of `2999-01-01T23:30:00Z` is silently truncated to a date.
+- Not flaws, to avoid inventing any: ownership (atomic `findByIdAndOwnerUsername`, 404 for foreign and missing tasks, owner only from `Authentication`), DTO/entity separation, problem+json shape, no stack-trace leaks, stable sort and the migration validated against PostgreSQL were all correct on the first pass.
+- Mine, corrected on the way: a UTC assertion that compared `ZoneId.of("UTC")` with `ZoneOffset.UTC`; a first Accept test that got 200 because the mock returned `null`; a heredoc with quotes that wrote no files (re-done with the editor tool).
+- Tried and abandoned: `allow-coercion-of-scalars=false` does not stop `{"title": 123}` from being coerced to a string (Jackson needs a `CoercionConfig`, which the web slice does not load). The test was removed from the green commit and the limitation is recorded as open in `review.md`.
+- Left open on purpose and listed in `review.md`: lost updates on PUT (needs an `If-Match`/version contract), the 401 body format (platform), 409 for a valid token whose user is missing from `users`, silent unknown properties, audit timestamps not from the `Clock`.
