@@ -6,7 +6,7 @@ import { json, problem, stubFetch } from '../test/http'
 import { renderWithProviders } from '../test/helpers'
 import { SESSION_STORAGE_KEY } from './session'
 import { useAuth } from './useAuth'
-import type { AuthContextValue } from './authContext'
+import type { AuthContextValue } from './context'
 
 let auth: AuthContextValue
 

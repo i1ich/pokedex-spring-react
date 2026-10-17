@@ -113,7 +113,9 @@ describe('apiRequest', () => {
       }),
     )
 
-    const error = await apiRequest('/api/v1/auth/register', { method: 'POST' }).catch((e) => e)
+    const error = await apiRequest('/api/v1/auth/register', { method: 'POST' }).catch(
+      (e: unknown) => e as ApiError,
+    )
 
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({
@@ -127,7 +129,7 @@ describe('apiRequest', () => {
   it('defaults errors to an empty list and detail to null', async () => {
     stubFetch(() => problem(404, { title: 'Not Found' }))
 
-    const error = await apiRequest('/api/v1/pokemon/zzz').catch((e) => e)
+    const error = await apiRequest('/api/v1/pokemon/zzz').catch((e: unknown) => e as ApiError)
 
     expect(error).toMatchObject({ status: 404, title: 'Not Found', detail: null, errors: [] })
   })
@@ -141,7 +143,7 @@ describe('apiRequest', () => {
         }),
     )
 
-    const error = await apiRequest('/api/v1/pokemon').catch((e) => e)
+    const error = await apiRequest<never>('/api/v1/pokemon').catch((e: unknown) => e as ApiError)
 
     expect(error).toBeInstanceOf(ApiError)
     expect(error.status).toBe(502)
@@ -156,7 +158,7 @@ describe('apiRequest', () => {
       () => new Response('{oops', { status: 500, headers: { 'Content-Type': 'application/json' } }),
     )
 
-    const error = await apiRequest('/api/v1/pokemon').catch((e) => e)
+    const error = await apiRequest<never>('/api/v1/pokemon').catch((e: unknown) => e as ApiError)
 
     expect(error).toMatchObject({ status: 500, title: 'Unexpected server response' })
   })
@@ -166,7 +168,7 @@ describe('apiRequest', () => {
       throw new TypeError('Failed to fetch')
     })
 
-    const error = await apiRequest('/api/v1/pokemon').catch((e) => e)
+    const error = await apiRequest<never>('/api/v1/pokemon').catch((e: unknown) => e as ApiError)
 
     expect(error).toBeInstanceOf(ApiError)
     expect(error).toMatchObject({ status: 0, title: 'Network error' })
