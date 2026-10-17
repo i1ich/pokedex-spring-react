@@ -13,7 +13,7 @@ spring:
     enabled: true
   cache:
     type: caffeine
-    cache-names: pokeapi-list,pokeapi-pokemon,pokeapi-species
+    cache-names: pokeapi-list,pokeapi-pokemon,pokeapi-species,pokeapi-evolution
     caffeine:
       # PokeAPI data is effectively static: bounded size, long TTL.
       spec: maximumSize=5000,expireAfterWrite=6h,recordStats

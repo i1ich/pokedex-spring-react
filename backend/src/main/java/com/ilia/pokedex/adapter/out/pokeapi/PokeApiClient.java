@@ -57,7 +57,10 @@ public class PokeApiClient {
 
     @Cacheable(cacheNames = EVOLUTION_CACHE, key = "#id")
     public EvolutionChainResponse fetchEvolutionChain(int id) {
-        throw new UnsupportedOperationException("not implemented");
+        return call("Evolution chain", id, () -> restClient.get()
+                .uri("/evolution-chain/{id}", id)
+                .retrieve()
+                .body(EvolutionChainResponse.class));
     }
 
     private static <T> T call(String resource, Object key, Supplier<T> request) {

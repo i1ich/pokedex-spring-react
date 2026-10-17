@@ -1,7 +1,9 @@
 package com.ilia.pokedex.config;
 
+import com.ilia.pokedex.application.port.in.GetPokemonDetailsUseCase;
 import com.ilia.pokedex.application.port.in.ListPokemonUseCase;
 import com.ilia.pokedex.application.port.out.PokemonCatalog;
+import com.ilia.pokedex.application.service.GetPokemonDetailsService;
 import com.ilia.pokedex.application.service.ListPokemonService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -16,5 +18,10 @@ public class UseCaseConfig {
     @Bean
     ListPokemonUseCase listPokemonUseCase(PokemonCatalog pokemonCatalog) {
         return new ListPokemonService(pokemonCatalog);
+    }
+
+    @Bean
+    GetPokemonDetailsUseCase getPokemonDetailsUseCase(PokemonCatalog pokemonCatalog) {
+        return new GetPokemonDetailsService(pokemonCatalog);
     }
 }

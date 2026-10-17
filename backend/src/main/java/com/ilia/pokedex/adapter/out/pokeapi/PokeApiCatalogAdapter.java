@@ -1,5 +1,6 @@
 package com.ilia.pokedex.adapter.out.pokeapi;
 
+import com.ilia.pokedex.adapter.out.pokeapi.dto.EvolutionChainResponse;
 import com.ilia.pokedex.adapter.out.pokeapi.dto.NamedApiResource;
 import com.ilia.pokedex.adapter.out.pokeapi.dto.PokemonListResponse;
 import com.ilia.pokedex.adapter.out.pokeapi.dto.PokemonResponse;
@@ -9,6 +10,8 @@ import com.ilia.pokedex.domain.exception.DomainException;
 import com.ilia.pokedex.domain.exception.ExternalServiceException;
 import com.ilia.pokedex.domain.exception.ResourceNotFoundException;
 import com.ilia.pokedex.domain.model.PokemonDetails;
+import com.ilia.pokedex.domain.model.PokemonDetails.EvolutionNode;
+import com.ilia.pokedex.domain.model.PokemonDetails.Stat;
 import com.ilia.pokedex.domain.model.PokemonSummary;
 
 import java.util.Comparator;
@@ -21,7 +24,8 @@ import java.util.concurrent.Executor;
 /**
  * Implements {@link PokemonCatalog} on top of PokeAPI. The list endpoint only returns names, so each
  * entry is enriched with its Pokémon and species resources. These lookups run in parallel on the given
- * executor (virtual threads in production, a same-thread executor in tests).
+ * executor (virtual threads in production, a same-thread executor in tests). The detail view is a
+ * dependent chain (Pokémon -> species -> evolution chain), so it runs sequentially; each step is cached.
  */
 public class PokeApiCatalogAdapter implements PokemonCatalog {
 
@@ -50,7 +54,18 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
 
     @Override
     public PokemonDetails findDetails(String idOrName) {
-        throw new UnsupportedOperationException("not implemented");
+        PokemonResponse pokemon = client.fetchPokemon(idOrName);
+        SpeciesResponse species = pokemon.species() == null ? null : speciesOrNull(pokemon.species());
+        return new PokemonDetails(
+                pokemon.id(),
+                pokemon.name(),
+                imageOf(pokemon),
+                pokemon.height(),
+                pokemon.weight(),
+                typeNames(pokemon),
+                statsOf(pokemon),
+                species == null ? null : descriptionOf(species),
+                evolutionOf(pokemon, species));
     }
 
     private PokemonSummary toSummary(String name) {
@@ -81,6 +96,108 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
                     .orElse(null);
         } catch (ResourceNotFoundException e) {
             return null;
+        }
+    }
+
+    /** Official artwork when present, otherwise the plain front sprite. */
+    private static String imageOf(PokemonResponse pokemon) {
+        PokemonResponse.Sprites sprites = pokemon.sprites();
+        if (sprites == null) {
+            return null;
+        }
+        if (sprites.other() != null && sprites.other().officialArtwork() != null) {
+            String artwork = sprites.other().officialArtwork().frontDefault();
+            if (artwork != null && !artwork.isBlank()) {
+                return artwork;
+            }
+        }
+        return sprites.frontDefault();
+    }
+
+    private static List<String> typeNames(PokemonResponse pokemon) {
+        if (pokemon.types() == null) {
+            return List.of();
+        }
+        return pokemon.types().stream()
+                .sorted(Comparator.comparingInt(PokemonResponse.TypeSlot::slot))
+                .map(slot -> slot.type().name())
+                .toList();
+    }
+
+    private static List<Stat> statsOf(PokemonResponse pokemon) {
+        if (pokemon.stats() == null) {
+            return List.of();
+        }
+        return pokemon.stats().stream()
+                .map(slot -> new Stat(slot.stat().name(), slot.baseStat()))
+                .toList();
+    }
+
+    /** A missing species only costs the description and the chain, not the whole detail view. */
+    private SpeciesResponse speciesOrNull(NamedApiResource speciesRef) {
+        try {
+            return client.fetchSpecies(speciesRef.idFromUrl());
+        } catch (ResourceNotFoundException e) {
+            return null;
+        }
+    }
+
+    /** First English Pokédex entry; line breaks and form feeds become single spaces. */
+    private static String descriptionOf(SpeciesResponse species) {
+        if (species.flavorTextEntries() == null) {
+            return null;
+        }
+        return species.flavorTextEntries().stream()
+                .filter(e -> e.language() != null && ENGLISH.equals(e.language().name()))
+                .map(SpeciesResponse.FlavorText::flavorText)
+                .filter(Objects::nonNull)
+                .map(text -> text.replaceAll("\\s+", " ").trim())
+                .findFirst()
+                .orElse(null);
+    }
+
+    /**
+     * The full tree from the base species. When the species or its chain is unavailable, the Pokémon
+     * is shown as the only node, which is also what PokeAPI returns for species without evolutions.
+     */
+    private EvolutionNode evolutionOf(PokemonResponse pokemon, SpeciesResponse species) {
+        if (species != null && species.evolutionChain() != null) {
+            try {
+                EvolutionChainResponse chain = client.fetchEvolutionChain(idOf(species.evolutionChain()));
+                if (chain.chain() != null) {
+                    return toNode(chain.chain());
+                }
+            } catch (ResourceNotFoundException e) {
+                // fall through to the single-node chain
+            }
+        }
+        NamedApiResource speciesRef = pokemon.species();
+        return speciesRef == null
+                ? new EvolutionNode(pokemon.id(), pokemon.name(), null, null, List.of())
+                : new EvolutionNode(idOf(speciesRef), speciesRef.name(), null, null, List.of());
+    }
+
+    private static EvolutionNode toNode(EvolutionChainResponse.ChainLink link) {
+        EvolutionChainResponse.EvolutionDetail detail =
+                link.evolutionDetails() == null || link.evolutionDetails().isEmpty()
+                        ? null
+                        : link.evolutionDetails().get(0);
+        List<EvolutionNode> children = link.evolvesTo() == null
+                ? List.of()
+                : link.evolvesTo().stream().map(PokeApiCatalogAdapter::toNode).toList();
+        return new EvolutionNode(
+                idOf(link.species()),
+                link.species().name(),
+                detail == null ? null : detail.minLevel(),
+                detail == null || detail.trigger() == null ? null : detail.trigger().name(),
+                children);
+    }
+
+    private static int idOf(NamedApiResource resource) {
+        try {
+            return Integer.parseInt(resource.idFromUrl());
+        } catch (NumberFormatException e) {
+            throw new ExternalServiceException("PokeAPI returned an unexpected resource URL: " + resource.url(), e);
         }
     }
 
