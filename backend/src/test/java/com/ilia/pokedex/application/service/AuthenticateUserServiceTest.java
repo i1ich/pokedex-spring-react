@@ -97,6 +97,7 @@ class AuthenticateUserServiceTest {
         when(users.findByUsername("ghost")).thenReturn(Optional.empty());
         when(users.findByUsername("demo")).thenReturn(Optional.of(DEMO));
         when(hasher.matches("wrong-pass", "STORED_HASH")).thenReturn(false);
+        when(hasher.matches("wrong-pass", "DUMMY_HASH")).thenReturn(false);
 
         Throwable unknownUser = org.assertj.core.api.Assertions.catchThrowable(
                 () -> service.authenticate("ghost", "wrong-pass"));

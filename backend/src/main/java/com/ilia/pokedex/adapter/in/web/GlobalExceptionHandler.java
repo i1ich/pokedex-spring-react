@@ -1,5 +1,7 @@
 package com.ilia.pokedex.adapter.in.web;
 
+import com.ilia.pokedex.domain.exception.AuthenticationFailedException;
+import com.ilia.pokedex.domain.exception.ConflictException;
 import com.ilia.pokedex.domain.exception.ExternalServiceException;
 import com.ilia.pokedex.domain.exception.InvalidRequestException;
 import com.ilia.pokedex.domain.exception.ResourceNotFoundException;
@@ -42,6 +44,22 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.NOT_FOUND, ex.getMessage());
         problem.setTitle("Resource not found");
         return problem;
+    }
+
+    @ExceptionHandler(ConflictException.class)
+    ProblemDetail handleConflict(ConflictException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.CONFLICT, ex.getMessage());
+        problem.setTitle("Conflict");
+        return problem;
+    }
+
+    @ExceptionHandler(AuthenticationFailedException.class)
+    ResponseEntity<ProblemDetail> handleAuthenticationFailed(AuthenticationFailedException ex) {
+        ProblemDetail problem = ProblemDetail.forStatusAndDetail(HttpStatus.UNAUTHORIZED, ex.getMessage());
+        problem.setTitle("Authentication failed");
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .header(HttpHeaders.WWW_AUTHENTICATE, "Bearer")
+                .body(problem);
     }
 
     @ExceptionHandler(ExternalServiceException.class)

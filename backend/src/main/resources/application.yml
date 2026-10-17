@@ -23,6 +23,15 @@ pokeapi:
   connect-timeout: 3s
   read-timeout: 10s
 
+app:
+  jwt:
+    # HS256 signing secret, at least 32 bytes; the app refuses to start with a shorter one.
+    # The default exists only so `mvn spring-boot:run` works locally: always set JWT_SECRET elsewhere.
+    secret: ${JWT_SECRET:dev-only-insecure-jwt-secret-change-me-0123456789}
+    ttl: 1h
+  cors:
+    allowed-origins: http://localhost:5173,http://localhost:3000
+
 management:
   endpoints:
     web:
