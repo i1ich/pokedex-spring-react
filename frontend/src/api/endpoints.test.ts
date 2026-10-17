@@ -2,7 +2,13 @@ import { demoSession } from '../test/fixtures'
 import { headersOf, json, stubFetch, urlOf } from '../test/http'
 import { setSession } from '../auth/session'
 import { getCurrentUser, login, register } from './auth'
-import { fetchLocalPokemon, fetchLocalPokemonPage, syncPokemon } from './localPokemon'
+import {
+  deleteLocalPokemon,
+  fetchLocalPokemon,
+  fetchLocalPokemonPage,
+  syncPokemon,
+  updateLocalPokemon,
+} from './localPokemon'
 import { fetchPokemonDetails, fetchPokemonPage } from './pokemon'
 import { queryKeys } from './queryKeys'
 
@@ -44,6 +50,36 @@ describe('local pokemon endpoints (protected)', () => {
     expect(urlOf(fetchMock).pathname).toBe('/api/v1/local-pokemon/sync')
     expect(fetchMock.mock.calls[0][1]?.method).toBe('POST')
     expect(fetchMock.mock.calls[0][1]?.body).toBe('{"idOrName":"pikachu"}')
+    expect(headersOf(fetchMock).get('authorization')).toBe('Bearer tok')
+  })
+
+  it('syncPokemon reports whether the Pokémon was created (201) or refreshed (200)', async () => {
+    stubFetch(() => json({ id: 25 }, 201))
+    await expect(syncPokemon('pikachu')).resolves.toEqual({ pokemon: { id: 25 }, created: true })
+
+    stubFetch(() => json({ id: 25 }, 200))
+    await expect(syncPokemon('pikachu')).resolves.toEqual({ pokemon: { id: 25 }, created: false })
+  })
+
+  it('updateLocalPokemon PUTs exactly the request body with the token', async () => {
+    const fetchMock = stubFetch(() => json({ id: 25, version: 4 }))
+    const request = { localName: 'Sparky', region: null, notes: null, tags: ['a'], version: 3 }
+
+    await expect(updateLocalPokemon(25, request)).resolves.toEqual({ id: 25, version: 4 })
+
+    expect(urlOf(fetchMock).pathname).toBe('/api/v1/local-pokemon/25')
+    expect(fetchMock.mock.calls[0][1]?.method).toBe('PUT')
+    expect(JSON.parse(String(fetchMock.mock.calls[0][1]?.body))).toEqual(request)
+    expect(headersOf(fetchMock).get('authorization')).toBe('Bearer tok')
+  })
+
+  it('deleteLocalPokemon DELETEs with the token and resolves on 204', async () => {
+    const fetchMock = stubFetch(() => new Response(null, { status: 204 }))
+
+    await expect(deleteLocalPokemon(25)).resolves.toBeUndefined()
+
+    expect(urlOf(fetchMock).pathname).toBe('/api/v1/local-pokemon/25')
+    expect(fetchMock.mock.calls[0][1]?.method).toBe('DELETE')
     expect(headersOf(fetchMock).get('authorization')).toBe('Bearer tok')
   })
 
