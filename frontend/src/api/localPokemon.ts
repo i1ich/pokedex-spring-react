@@ -1,4 +1,4 @@
-import { apiRequest } from './client'
+import { apiRequest, apiRequestWithStatus } from './client'
 import type { LocalPokemon, Page, UpdateLocalPokemonRequest } from './types'
 
 export interface SyncResult {
@@ -9,12 +9,12 @@ export interface SyncResult {
 
 /** Creates (201) or refreshes (200) the local copy of a Pokémon from PokeAPI. */
 export async function syncPokemon(idOrName: string): Promise<SyncResult> {
-  const pokemon = await apiRequest<LocalPokemon>('/api/v1/local-pokemon/sync', {
+  const { data, status } = await apiRequestWithStatus<LocalPokemon>('/api/v1/local-pokemon/sync', {
     method: 'POST',
     body: { idOrName: idOrName.trim().toLowerCase() },
     auth: true,
   })
-  return { pokemon, created: false }
+  return { pokemon: data, created: status === 201 }
 }
 
 export function fetchLocalPokemonPage(page: number, size: number, signal?: AbortSignal) {
@@ -29,10 +29,15 @@ export function fetchLocalPokemon(id: number, signal?: AbortSignal) {
   return apiRequest<LocalPokemon>(`/api/v1/local-pokemon/${id}`, { auth: true, signal })
 }
 
+/** Sends exactly `{localName, region, notes, tags, version}`: the backend rejects any other property. */
 export function updateLocalPokemon(id: number, request: UpdateLocalPokemonRequest) {
-  throw new Error(`not implemented: ${id} ${JSON.stringify(request)}`)
+  return apiRequest<LocalPokemon>(`/api/v1/local-pokemon/${id}`, {
+    method: 'PUT',
+    body: request,
+    auth: true,
+  })
 }
 
 export function deleteLocalPokemon(id: number) {
-  throw new Error(`not implemented: ${id}`)
+  return apiRequest<void>(`/api/v1/local-pokemon/${id}`, { method: 'DELETE', auth: true })
 }

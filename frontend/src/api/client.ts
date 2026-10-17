@@ -89,7 +89,21 @@ async function toApiError(response: Response): Promise<ApiError> {
   return unexpectedResponse(response.status)
 }
 
+export interface ApiResponse<T> {
+  data: T
+  /** HTTP status of the successful answer, e.g. to tell 201 (created) from 200. */
+  status: number
+}
+
 export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  return (await apiRequestWithStatus<T>(path, options)).data
+}
+
+/** Like `apiRequest`, but also reports the HTTP status of a successful answer. */
+export async function apiRequestWithStatus<T>(
+  path: string,
+  options: RequestOptions = {},
+): Promise<ApiResponse<T>> {
   const { method = 'GET', body, auth = false, query, signal } = options
   const headers = new Headers({ Accept: 'application/json, application/problem+json' })
   if (body !== undefined) headers.set('Content-Type', 'application/json')
@@ -120,9 +134,9 @@ export async function apiRequest<T>(path: string, options: RequestOptions = {}):
     if (response.status === 401 && auth) clearSession()
     throw await toApiError(response)
   }
-  if (response.status === 204) return undefined as T
+  if (response.status === 204) return { data: undefined as T, status: response.status }
   try {
-    return (await response.json()) as T
+    return { data: (await response.json()) as T, status: response.status }
   } catch {
     throw unexpectedResponse(response.status)
   }
