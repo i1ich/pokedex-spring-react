@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SESSION_STORAGE_KEY } from './auth/session'
 import { AppRoutes } from './AppRoutes'
-import { demoSession, pageOf, pikachu } from './test/fixtures'
+import { demoSession, pageOf, pikachu, pikachuDetails } from './test/fixtures'
 import { renderWithProviders } from './test/helpers'
 import { json, stubFetch } from './test/http'
 
@@ -49,10 +49,11 @@ describe('AppRoutes', () => {
     expect(sessionStorage.getItem(SESSION_STORAGE_KEY)).toBeNull()
   })
 
-  it('registers the detail route so card links do not 404', () => {
+  it('registers the detail route so card links do not 404', async () => {
+    stubFetch(() => json(pikachuDetails))
     renderWithProviders(<AppRoutes />, { route: '/pokemon/pikachu' })
 
-    expect(screen.getByRole('heading', { name: /pikachu/i })).toBeInTheDocument()
+    expect(await screen.findByRole('heading', { level: 1, name: 'Pikachu' })).toBeInTheDocument()
   })
 
   it('redirects /collection to the login page for anonymous visitors', () => {

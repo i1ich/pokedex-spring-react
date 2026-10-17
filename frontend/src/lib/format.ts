@@ -16,16 +16,19 @@ export function formatWeight(kg: number): string {
 }
 
 export function formatHeight(m: number): string {
-  throw new Error(`not implemented: ${m}`)
+  return `${m.toLocaleString('en-US', { maximumFractionDigits: 1 })} m`
 }
 
+/** `hp` -> `HP`, `special-attack` -> `Special Attack`. */
 export function formatStatName(name: string): string {
-  throw new Error(`not implemented: ${name}`)
+  return name === 'hp' ? 'HP' : formatName(name)
 }
 
+/** How an evolution happens: `Level 16`, or the trigger (`Use Item`); null for the first stage. */
 export function formatEvolutionStep(step: {
   minLevel: number | null
   trigger: string | null
 }): string | null {
-  throw new Error(`not implemented: ${JSON.stringify(step)}`)
+  if (step.minLevel !== null) return `Level ${step.minLevel}`
+  return step.trigger ? formatName(step.trigger) : null
 }
