@@ -1,0 +1,20 @@
+spring:
+  application:
+    name: tasks
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/tasks}
+    username: ${DB_USERNAME:tasks}
+    password: ${DB_PASSWORD:tasks}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+server:
+  error:
+    include-stacktrace: never
+    include-message: never
+    include-binding-errors: never
