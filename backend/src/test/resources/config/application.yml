@@ -1,0 +1,6 @@
+# Loaded in addition to, and with priority over, the main application.yml (do not create
+# src/test/resources/application.yml: it would shadow the main one on the test classpath).
+app:
+  seed:
+    # tests must never call PokeAPI from the startup seeder
+    enabled: false
