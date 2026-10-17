@@ -21,6 +21,15 @@ public class ScenarioContext {
         return token == null ? spec : spec.header("Authorization", "Bearer " + token);
     }
 
+    /** A request without credentials, whatever the scenario did before. */
+    public RequestSpecification anonymousRequest() {
+        return RestAssured.given().port(port);
+    }
+
+    public void signOut() {
+        this.token = null;
+    }
+
     public void signInWith(String token) {
         this.token = token;
     }

@@ -22,7 +22,9 @@ public class Hooks {
         FakePokeApi.reset();
         // the PokeAPI client caches responses for hours: a stub changed by a scenario must really be called
         cacheManager.getCacheNames().forEach(name -> Objects.requireNonNull(cacheManager.getCache(name)).clear());
-        // tags and abilities go with the row (ON DELETE CASCADE); users, including the demo user from V2, stay
+        // tags and abilities go with the row (ON DELETE CASCADE)
         jdbc.update("DELETE FROM local_pokemon");
+        // accounts registered by a scenario go; the demo user seeded by migration V2 stays
+        jdbc.update("DELETE FROM app_user WHERE username <> 'demo'");
     }
 }
