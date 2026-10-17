@@ -1,0 +1,11 @@
+{
+  "id": 386,
+  "name": "deoxys-normal",
+  "height": 17,
+  "weight": 608,
+  "sprites": { "front_default": "https://img.test/386.png" },
+  "abilities": [
+    { "ability": { "name": "pressure", "url": "https://pokeapi.test/api/v2/ability/46/" }, "is_hidden": false, "slot": 1 }
+  ],
+  "species": { "name": "deoxys", "url": "https://pokeapi.test/api/v2/pokemon-species/386/" }
+}
