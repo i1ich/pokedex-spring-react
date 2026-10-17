@@ -1,5 +1,6 @@
 package com.ilia.pokedex.adapter.out.pokeapi;
 
+import com.ilia.pokedex.adapter.out.pokeapi.dto.EvolutionChainResponse;
 import com.ilia.pokedex.adapter.out.pokeapi.dto.PokemonListResponse;
 import com.ilia.pokedex.adapter.out.pokeapi.dto.PokemonResponse;
 import com.ilia.pokedex.adapter.out.pokeapi.dto.SpeciesResponse;
@@ -22,6 +23,7 @@ public class PokeApiClient {
     public static final String LIST_CACHE = "pokeapi-list";
     public static final String POKEMON_CACHE = "pokeapi-pokemon";
     public static final String SPECIES_CACHE = "pokeapi-species";
+    public static final String EVOLUTION_CACHE = "pokeapi-evolution";
 
     private final RestClient restClient;
 
@@ -51,6 +53,11 @@ public class PokeApiClient {
                 .uri("/pokemon-species/{idOrName}", idOrName.toLowerCase())
                 .retrieve()
                 .body(SpeciesResponse.class));
+    }
+
+    @Cacheable(cacheNames = EVOLUTION_CACHE, key = "#id")
+    public EvolutionChainResponse fetchEvolutionChain(int id) {
+        throw new UnsupportedOperationException("not implemented");
     }
 
     private static <T> T call(String resource, Object key, Supplier<T> request) {

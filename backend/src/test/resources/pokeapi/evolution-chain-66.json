@@ -1,0 +1,11 @@
+{
+  "id": 66,
+  "chain": {
+    "species": {
+      "name": "ditto",
+      "url": "https://pokeapi.test/api/v2/pokemon-species/132/"
+    },
+    "evolution_details": [],
+    "evolves_to": []
+  }
+}

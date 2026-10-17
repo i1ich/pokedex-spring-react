@@ -12,11 +12,27 @@ public record PokemonResponse(
         int height,
         Sprites sprites,
         List<AbilitySlot> abilities,
+        List<StatSlot> stats,
+        List<TypeSlot> types,
         NamedApiResource species) {
 
-    public record Sprites(@JsonProperty("front_default") String frontDefault) {
+    public record Sprites(
+            @JsonProperty("front_default") String frontDefault,
+            Other other) {
+    }
+
+    public record Other(@JsonProperty("official-artwork") Artwork officialArtwork) {
+    }
+
+    public record Artwork(@JsonProperty("front_default") String frontDefault) {
     }
 
     public record AbilitySlot(NamedApiResource ability, @JsonProperty("is_hidden") boolean hidden, int slot) {
+    }
+
+    public record StatSlot(@JsonProperty("base_stat") int baseStat, NamedApiResource stat) {
+    }
+
+    public record TypeSlot(int slot, NamedApiResource type) {
     }
 }

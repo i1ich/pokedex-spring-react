@@ -8,6 +8,7 @@ import com.ilia.pokedex.application.port.out.PokemonCatalog;
 import com.ilia.pokedex.domain.exception.DomainException;
 import com.ilia.pokedex.domain.exception.ExternalServiceException;
 import com.ilia.pokedex.domain.exception.ResourceNotFoundException;
+import com.ilia.pokedex.domain.model.PokemonDetails;
 import com.ilia.pokedex.domain.model.PokemonSummary;
 
 import java.util.Comparator;
@@ -45,6 +46,11 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
 
         List<PokemonSummary> items = futures.stream().map(PokeApiCatalogAdapter::join).toList();
         return new CatalogSlice(items, list.count());
+    }
+
+    @Override
+    public PokemonDetails findDetails(String idOrName) {
+        throw new UnsupportedOperationException("not implemented");
     }
 
     private PokemonSummary toSummary(String name) {

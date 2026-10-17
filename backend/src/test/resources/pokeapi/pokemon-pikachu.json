@@ -1,0 +1,77 @@
+{
+  "id": 25,
+  "name": "pikachu",
+  "height": 4,
+  "weight": 60,
+  "sprites": {
+    "front_default": "https://img.test/25.png",
+    "other": {
+      "official-artwork": {
+        "front_default": "https://img.test/artwork/25.png"
+      }
+    }
+  },
+  "stats": [
+    {
+      "base_stat": 35,
+      "effort": 0,
+      "stat": {
+        "name": "hp",
+        "url": "https://pokeapi.test/api/v2/stat/1/"
+      }
+    },
+    {
+      "base_stat": 55,
+      "effort": 0,
+      "stat": {
+        "name": "attack",
+        "url": "https://pokeapi.test/api/v2/stat/2/"
+      }
+    },
+    {
+      "base_stat": 40,
+      "effort": 0,
+      "stat": {
+        "name": "defense",
+        "url": "https://pokeapi.test/api/v2/stat/3/"
+      }
+    },
+    {
+      "base_stat": 50,
+      "effort": 0,
+      "stat": {
+        "name": "special-attack",
+        "url": "https://pokeapi.test/api/v2/stat/4/"
+      }
+    },
+    {
+      "base_stat": 50,
+      "effort": 0,
+      "stat": {
+        "name": "special-defense",
+        "url": "https://pokeapi.test/api/v2/stat/5/"
+      }
+    },
+    {
+      "base_stat": 90,
+      "effort": 0,
+      "stat": {
+        "name": "speed",
+        "url": "https://pokeapi.test/api/v2/stat/6/"
+      }
+    }
+  ],
+  "types": [
+    {
+      "slot": 1,
+      "type": {
+        "name": "electric",
+        "url": "https://pokeapi.test/api/v2/type/13/"
+      }
+    }
+  ],
+  "species": {
+    "name": "pikachu",
+    "url": "https://pokeapi.test/api/v2/pokemon-species/25/"
+  }
+}

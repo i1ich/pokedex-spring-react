@@ -2,6 +2,10 @@ package com.ilia.pokedex.adapter.out.pokeapi;
 
 import com.ilia.pokedex.application.port.out.PokemonCatalog.CatalogSlice;
 import com.ilia.pokedex.domain.exception.ExternalServiceException;
+import com.ilia.pokedex.domain.exception.ResourceNotFoundException;
+import com.ilia.pokedex.domain.model.PokemonDetails;
+import com.ilia.pokedex.domain.model.PokemonDetails.EvolutionNode;
+import com.ilia.pokedex.domain.model.PokemonDetails.Stat;
 import com.ilia.pokedex.domain.model.PokemonSummary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -97,6 +101,103 @@ class PokeApiCatalogAdapterTest {
                 .andRespond(withStatus(HttpStatus.INTERNAL_SERVER_ERROR));
 
         assertThatThrownBy(() -> adapter.findSlice(0, 2))
+                .isInstanceOf(ExternalServiceException.class);
+    }
+
+    @Test
+    void buildsPikachuDetailsFromPokemonSpeciesAndEvolutionChain() {
+        expectJson("/pokemon/pikachu", "pokemon-pikachu");
+        expectJson("/pokemon-species/25", "species-25");
+        expectJson("/evolution-chain/10", "evolution-chain-10");
+
+        PokemonDetails details = adapter.findDetails("pikachu");
+
+        server.verify();
+        assertThat(details.id()).isEqualTo(25);
+        assertThat(details.name()).isEqualTo("pikachu");
+        assertThat(details.imageUrl()).isEqualTo("https://img.test/artwork/25.png");
+        assertThat(details.heightM()).isEqualTo(0.4);
+        assertThat(details.weightKg()).isEqualTo(6.0);
+        assertThat(details.types()).containsExactly("electric");
+        assertThat(details.stats()).containsExactly(
+                new Stat("hp", 35), new Stat("attack", 55), new Stat("defense", 40),
+                new Stat("special-attack", 50), new Stat("special-defense", 50), new Stat("speed", 90));
+        assertThat(details.description()).isEqualTo(
+                "When several of these POK\u00e9MON gather, their electricity could build and cause lightning storms.");
+    }
+
+    @Test
+    void mapsALinearEvolutionChainToANestedTree() {
+        expectJson("/pokemon/pikachu", "pokemon-pikachu");
+        expectJson("/pokemon-species/25", "species-25");
+        expectJson("/evolution-chain/10", "evolution-chain-10");
+
+        EvolutionNode root = adapter.findDetails("pikachu").evolutionChain();
+
+        assertThat(root).isEqualTo(new EvolutionNode(172, "pichu", null, null, java.util.List.of(
+                new EvolutionNode(25, "pikachu", null, "level-up", java.util.List.of(
+                        new EvolutionNode(26, "raichu", null, "use-item", java.util.List.of()))))));
+    }
+
+    @Test
+    void keepsEveryBranchOfAForkedEvolutionChain() {
+        expectJson("/pokemon/eevee", "pokemon-eevee");
+        expectJson("/pokemon-species/133", "species-133");
+        expectJson("/evolution-chain/67", "evolution-chain-67");
+
+        EvolutionNode root = adapter.findDetails("eevee").evolutionChain();
+
+        assertThat(root.name()).isEqualTo("eevee");
+        assertThat(root.evolvesTo()).extracting(EvolutionNode::name)
+                .containsExactly("vaporeon", "jolteon", "flareon", "umbreon");
+        assertThat(root.evolvesTo()).extracting(EvolutionNode::id)
+                .containsExactly(134, 135, 136, 197);
+        assertThat(root.evolvesTo()).extracting(EvolutionNode::trigger)
+                .containsExactly("use-item", "use-item", "use-item", "level-up");
+    }
+
+    @Test
+    void returnsASingleNodeChainForPokemonWithoutEvolutionsAndFallsBackToTheFrontSprite() {
+        expectJson("/pokemon/ditto", "pokemon-ditto");
+        expectJson("/pokemon-species/132", "species-132");
+        expectJson("/evolution-chain/66", "evolution-chain-66");
+
+        PokemonDetails details = adapter.findDetails("ditto");
+
+        // the official artwork is null in the fixture, so the plain front sprite is used
+        assertThat(details.imageUrl()).isEqualTo("https://img.test/132.png");
+        assertThat(details.evolutionChain())
+                .isEqualTo(new EvolutionNode(132, "ditto", null, null, java.util.List.of()));
+    }
+
+    @Test
+    void keepsTheDetailsUsableWhenTheSpeciesIsMissing() {
+        expectJson("/pokemon/pikachu", "pokemon-pikachu");
+        server.expect(requestTo(BASE_URL + "/pokemon-species/25")).andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        PokemonDetails details = adapter.findDetails("pikachu");
+
+        assertThat(details.description()).isNull();
+        assertThat(details.evolutionChain())
+                .isEqualTo(new EvolutionNode(25, "pikachu", null, null, java.util.List.of()));
+    }
+
+    @Test
+    void reportsUnknownPokemonAsNotFound() {
+        server.expect(requestTo(BASE_URL + "/pokemon/missingno")).andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        assertThatThrownBy(() -> adapter.findDetails("missingno"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void translatesEvolutionChainServerErrorsIntoExternalServiceException() {
+        expectJson("/pokemon/pikachu", "pokemon-pikachu");
+        expectJson("/pokemon-species/25", "species-25");
+        server.expect(requestTo(BASE_URL + "/evolution-chain/10"))
+                .andRespond(withStatus(HttpStatus.BAD_GATEWAY));
+
+        assertThatThrownBy(() -> adapter.findDetails("pikachu"))
                 .isInstanceOf(ExternalServiceException.class);
     }
 

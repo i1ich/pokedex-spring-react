@@ -51,6 +51,20 @@ class PokeApiClientCachingTest {
         assertThat(second).isEqualTo(first);
     }
 
+    @Test
+    void cachesEvolutionChainsById() {
+        server.expect(ExpectedCount.once(), requestTo(BASE_URL + "/evolution-chain/10"))
+                .andRespond(withSuccess(json("evolution-chain-10"), MediaType.APPLICATION_JSON));
+
+        var first = client.fetchEvolutionChain(10);
+        var second = client.fetchEvolutionChain(10);
+
+        server.verify();
+        assertThat(second).isEqualTo(first);
+        assertThat(first.chain().species().name()).isEqualTo("pichu");
+        assertThat(cacheManager.getCache(PokeApiClient.EVOLUTION_CACHE).get(10)).isNotNull();
+    }
+
     @Configuration
     @EnableCaching
     static class Config {

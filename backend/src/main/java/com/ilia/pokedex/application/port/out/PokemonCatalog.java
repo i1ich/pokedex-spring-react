@@ -1,5 +1,6 @@
 package com.ilia.pokedex.application.port.out;
 
+import com.ilia.pokedex.domain.model.PokemonDetails;
 import com.ilia.pokedex.domain.model.PokemonSummary;
 
 import java.util.List;
@@ -13,6 +14,13 @@ public interface PokemonCatalog {
      * @return the entries plus the total size of the catalogue
      */
     CatalogSlice findSlice(int offset, int limit);
+
+    /**
+     * @param idOrName PokeAPI id or lowercase name
+     * @return the full detail view including the evolution chain
+     * @throws com.ilia.pokedex.domain.exception.ResourceNotFoundException if no such Pokémon exists
+     */
+    PokemonDetails findDetails(String idOrName);
 
     record CatalogSlice(List<PokemonSummary> items, long totalCount) {
         public CatalogSlice {

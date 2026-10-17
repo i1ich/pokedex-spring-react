@@ -1,0 +1,77 @@
+{
+  "id": 133,
+  "name": "eevee",
+  "height": 3,
+  "weight": 65,
+  "sprites": {
+    "front_default": "https://img.test/133.png",
+    "other": {
+      "official-artwork": {
+        "front_default": "https://img.test/artwork/133.png"
+      }
+    }
+  },
+  "stats": [
+    {
+      "base_stat": 55,
+      "effort": 0,
+      "stat": {
+        "name": "hp",
+        "url": "https://pokeapi.test/api/v2/stat/1/"
+      }
+    },
+    {
+      "base_stat": 55,
+      "effort": 0,
+      "stat": {
+        "name": "attack",
+        "url": "https://pokeapi.test/api/v2/stat/2/"
+      }
+    },
+    {
+      "base_stat": 50,
+      "effort": 0,
+      "stat": {
+        "name": "defense",
+        "url": "https://pokeapi.test/api/v2/stat/3/"
+      }
+    },
+    {
+      "base_stat": 45,
+      "effort": 0,
+      "stat": {
+        "name": "special-attack",
+        "url": "https://pokeapi.test/api/v2/stat/4/"
+      }
+    },
+    {
+      "base_stat": 65,
+      "effort": 0,
+      "stat": {
+        "name": "special-defense",
+        "url": "https://pokeapi.test/api/v2/stat/5/"
+      }
+    },
+    {
+      "base_stat": 55,
+      "effort": 0,
+      "stat": {
+        "name": "speed",
+        "url": "https://pokeapi.test/api/v2/stat/6/"
+      }
+    }
+  ],
+  "types": [
+    {
+      "slot": 1,
+      "type": {
+        "name": "normal",
+        "url": "https://pokeapi.test/api/v2/type/1/"
+      }
+    }
+  ],
+  "species": {
+    "name": "eevee",
+    "url": "https://pokeapi.test/api/v2/pokemon-species/133/"
+  }
+}
