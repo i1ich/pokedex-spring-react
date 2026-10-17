@@ -450,8 +450,12 @@ describe('EditPokemonPage: saving', () => {
 
     await save()
 
-    expect(await screen.findByRole('alert')).toHaveTextContent(/no longer in your collection/i)
-    expect(screen.getByRole('link', { name: /back to my collection/i })).toBeInTheDocument()
+    const alert = await screen.findByRole('alert')
+    expect(alert).toHaveTextContent(/no longer in your collection/i)
+    expect(within(alert).getByRole('link', { name: /back to my collection/i })).toHaveAttribute(
+      'href',
+      '/collection',
+    )
   })
 
   it('shows other failures in an alert and keeps the form editable', async () => {

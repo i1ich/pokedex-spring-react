@@ -7,6 +7,8 @@ export const queryKeys = {
   },
   localPokemon: {
     all: ['local-pokemon'] as const,
+    /** Prefix of every `page(...)` key, for updating all cached list pages at once. */
+    pages: ['local-pokemon', 'page'] as const,
     page: (page: number, size: number) => ['local-pokemon', 'page', { page, size }] as const,
     detail: (id: number) => ['local-pokemon', 'detail', id] as const,
   },

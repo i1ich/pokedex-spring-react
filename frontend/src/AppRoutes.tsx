@@ -3,6 +3,7 @@ import { ProtectedRoute } from './auth/ProtectedRoute'
 import { Layout } from './components/Layout'
 import { BrowsePage } from './pages/BrowsePage'
 import { CollectionPage } from './pages/CollectionPage'
+import { EditPokemonPage } from './pages/EditPokemonPage'
 import { LoginPage } from './pages/LoginPage'
 import { NotFoundPage } from './pages/NotFoundPage'
 import { PokemonDetailPage } from './pages/PokemonDetailPage'
@@ -19,6 +20,7 @@ export function AppRoutes() {
         <Route path="register" element={<RegisterPage />} />
         <Route element={<ProtectedRoute />}>
           <Route path="collection" element={<CollectionPage />} />
+          <Route path="collection/:id/edit" element={<EditPokemonPage />} />
         </Route>
         <Route path="*" element={<NotFoundPage />} />
       </Route>
