@@ -1,9 +1,12 @@
 package com.ilia.pokedex.adapter.out.persistence;
 
 import com.ilia.pokedex.application.port.out.LocalPokemonRepository;
+import com.ilia.pokedex.domain.exception.ConflictException;
 import com.ilia.pokedex.domain.model.LocalPokemon;
 import com.ilia.pokedex.domain.model.PageQuery;
 import com.ilia.pokedex.domain.model.PageResult;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Sort;
@@ -18,7 +21,8 @@ import java.util.Optional;
  * {@link LocalPokemonRepository} on top of Spring Data JPA. Maps between the domain record and the JPA
  * entity in both directions; the entity never leaves this package. Optimistic locking is JPA's
  * {@code @Version}: saving a record whose version no longer matches the stored one fails with Spring's
- * {@code OptimisticLockingFailureException}. Collections are lazy, so every method that reads them maps to
+ * {@code OptimisticLockingFailureException}, which the adapter reports as the domain's
+ * {@link ConflictException}, as it does for an insert that loses a race on the primary key. Collections are lazy, so every method that reads them maps to
  * the domain inside its transaction.
  */
 @Repository
@@ -50,14 +54,28 @@ public class JpaLocalPokemonRepositoryAdapter implements LocalPokemonRepository 
     @Override
     @Transactional
     public LocalPokemon save(LocalPokemon pokemon) {
-        // saveAndFlush so the incremented version is visible in the returned state
-        return toDomain(repository.saveAndFlush(toEntity(pokemon)));
+        try {
+            // saveAndFlush so the incremented version is visible in the returned state
+            return toDomain(repository.saveAndFlush(toEntity(pokemon)));
+        } catch (OptimisticLockingFailureException e) {
+            // stale version, or the row vanished between the caller's read and this write
+            throw new ConflictException(
+                    "Pokémon " + pokemon.id() + " was modified concurrently; reload and try again", e);
+        } catch (DataIntegrityViolationException e) {
+            if (pokemon.version() == null) {
+                // an insert hit the primary key: another request synced the same Pokémon first
+                throw new ConflictException("Pokémon " + pokemon.id() + " was synced concurrently; retry", e);
+            }
+            throw e;
+        }
     }
 
     @Override
     @Transactional
     public boolean deleteById(int id) {
-        throw new UnsupportedOperationException("not implemented");
+        // one statement, so a concurrent update cannot turn the delete into a version failure; the
+        // collection tables are removed by ON DELETE CASCADE
+        return repository.deleteRowById(id) > 0;
     }
 
     private static LocalPokemon toDomain(LocalPokemonEntity e) {

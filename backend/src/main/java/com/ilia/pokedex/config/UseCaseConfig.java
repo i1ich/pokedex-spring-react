@@ -1,24 +1,28 @@
 package com.ilia.pokedex.config;
 
 import com.ilia.pokedex.application.port.in.AuthenticateUserUseCase;
+import com.ilia.pokedex.application.port.in.DeleteLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.GetLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.GetPokemonDetailsUseCase;
 import com.ilia.pokedex.application.port.in.ListLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.ListPokemonUseCase;
 import com.ilia.pokedex.application.port.in.RegisterUserUseCase;
 import com.ilia.pokedex.application.port.in.SyncPokemonUseCase;
+import com.ilia.pokedex.application.port.in.UpdateLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.out.LocalPokemonRepository;
 import com.ilia.pokedex.application.port.out.PasswordHasher;
 import com.ilia.pokedex.application.port.out.PokemonCatalog;
 import com.ilia.pokedex.application.port.out.TokenIssuer;
 import com.ilia.pokedex.application.port.out.UserRepository;
 import com.ilia.pokedex.application.service.AuthenticateUserService;
+import com.ilia.pokedex.application.service.DeleteLocalPokemonService;
 import com.ilia.pokedex.application.service.GetLocalPokemonService;
 import com.ilia.pokedex.application.service.GetPokemonDetailsService;
 import com.ilia.pokedex.application.service.ListLocalPokemonService;
 import com.ilia.pokedex.application.service.ListPokemonService;
 import com.ilia.pokedex.application.service.RegisterUserService;
 import com.ilia.pokedex.application.service.SyncPokemonService;
+import com.ilia.pokedex.application.service.UpdateLocalPokemonService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
@@ -55,6 +59,16 @@ public class UseCaseConfig {
     @Bean
     GetLocalPokemonUseCase getLocalPokemonUseCase(LocalPokemonRepository localPokemonRepository) {
         return new GetLocalPokemonService(localPokemonRepository);
+    }
+
+    @Bean
+    UpdateLocalPokemonUseCase updateLocalPokemonUseCase(LocalPokemonRepository localPokemonRepository, Clock clock) {
+        return new UpdateLocalPokemonService(localPokemonRepository, clock);
+    }
+
+    @Bean
+    DeleteLocalPokemonUseCase deleteLocalPokemonUseCase(LocalPokemonRepository localPokemonRepository) {
+        return new DeleteLocalPokemonService(localPokemonRepository);
     }
 
     @Bean

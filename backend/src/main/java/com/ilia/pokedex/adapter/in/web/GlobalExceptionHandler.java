@@ -1,5 +1,8 @@
 package com.ilia.pokedex.adapter.in.web;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
+import com.fasterxml.jackson.databind.exc.MismatchedInputException;
+import com.fasterxml.jackson.databind.exc.UnrecognizedPropertyException;
 import com.ilia.pokedex.domain.exception.AuthenticationFailedException;
 import com.ilia.pokedex.domain.exception.ConflictException;
 import com.ilia.pokedex.domain.exception.ExternalServiceException;
@@ -13,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ProblemDetail;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -96,6 +100,52 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
                 .toList();
         ProblemDetail problem = badRequest("Request body is invalid", errors);
         return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
+    /**
+     * Unreadable body: always a 400 with an {@code errors} entry. A property the DTO does not accept
+     * ({@link UnrecognizedPropertyException}) or a value of the wrong type names the offending field
+     * ({@code tags[1]} style paths); anything else (malformed JSON, no body) is reported as {@code request}.
+     * Jackson's own message is never echoed, as it contains parser internals and class names.
+     */
+    @Override
+    protected ResponseEntity<Object> handleHttpMessageNotReadable(
+            HttpMessageNotReadableException ex, HttpHeaders headers, HttpStatusCode status, WebRequest request) {
+        String field = null;
+        String message = "Request body is missing or is not valid JSON";
+        UnrecognizedPropertyException unknown = findUnrecognizedProperty(ex);
+        if (unknown != null) {
+            field = unknown.getPropertyName();
+            message = "'" + field + "' is read-only or unknown";
+        } else if (ex.getCause() instanceof MismatchedInputException mismatch && !mismatch.getPath().isEmpty()) {
+            field = jsonPath(mismatch);
+            message = field + " has the wrong type or an invalid format";
+        }
+        ProblemDetail problem = badRequest(message, List.of(fieldError(field, message)));
+        return handleExceptionInternal(ex, problem, headers, HttpStatus.BAD_REQUEST, request);
+    }
+
+    /** Jackson wraps what an any-setter throws, so the property exception can sit below the direct cause. */
+    private static UnrecognizedPropertyException findUnrecognizedProperty(Throwable ex) {
+        for (Throwable t = ex.getCause(); t != null; t = t.getCause() == t ? null : t.getCause()) {
+            if (t instanceof UnrecognizedPropertyException unknown) {
+                return unknown;
+            }
+        }
+        return null;
+    }
+
+    /** {@code tags[1]} or {@code version}, from the path Jackson followed to the bad value. */
+    private static String jsonPath(JsonMappingException ex) {
+        StringBuilder path = new StringBuilder();
+        for (JsonMappingException.Reference step : ex.getPath()) {
+            if (step.getFieldName() != null) {
+                path.append(path.isEmpty() ? "" : ".").append(step.getFieldName());
+            } else if (step.getIndex() >= 0) {
+                path.append('[').append(step.getIndex()).append(']');
+            }
+        }
+        return path.toString();
     }
 
     private static ProblemDetail badRequest(String detail, List<Map<String, String>> errors) {

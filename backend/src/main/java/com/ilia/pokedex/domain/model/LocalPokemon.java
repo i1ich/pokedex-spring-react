@@ -69,7 +69,10 @@ public record LocalPokemon(
     /** Local edit: replaces the proprietary fields only; PokeAPI data, {@code syncedAt} and version are kept. */
     public LocalPokemon withProprietaryFields(
             String localName, String region, String notes, List<String> tags, Instant now) {
-        throw new UnsupportedOperationException("not implemented");
+        return new LocalPokemon(
+                id, name, category, weightHectograms, heightDecimetres, spriteUrl, artworkUrl, abilities,
+                localName, region, notes, tags,
+                syncedAt, now, version);
     }
 
     public double weightKg() {

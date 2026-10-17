@@ -26,6 +26,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.atLeastOnce;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -158,10 +159,14 @@ class UpdateLocalPokemonServiceTest {
     }
 
     @Test
-    void acceptsATagOfFiftyCharactersAndRejectsOneOfFiftyOne() {
+    void acceptsATagOfFiftyCharacters() {
         service.update(command(null, null, null, List.of("a".repeat(50)), 3L));
-        assertThat(savedPokemon().tags()).containsExactly("a".repeat(50));
 
+        assertThat(savedPokemon().tags()).containsExactly("a".repeat(50));
+    }
+
+    @Test
+    void rejectsATagOfFiftyOneCharacters() {
         assertInvalid(command(null, null, null, List.of("a".repeat(51)), 3L), "tags[0]");
     }
 
@@ -223,7 +228,7 @@ class UpdateLocalPokemonServiceTest {
 
     @Test
     void letsAConflictRaisedByTheStoreEscape() {
-        when(repository.save(any())).thenThrow(new ConflictException("modified concurrently"));
+        doThrow(new ConflictException("modified concurrently")).when(repository).save(any());
 
         assertThatThrownBy(() -> service.update(command("Sparky", null, null, null, 3L)))
                 .isInstanceOf(ConflictException.class)
