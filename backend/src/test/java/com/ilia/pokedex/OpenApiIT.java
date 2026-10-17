@@ -153,6 +153,21 @@ class OpenApiIT {
     }
 
     @Test
+    void everySuccessResponseDescribesItsBody() {
+        api.get("paths").fields().forEachRemaining(path -> path.getValue().fields().forEachRemaining(op -> {
+            if (op.getKey().equals("delete")) {
+                return;
+            }
+            JsonNode responses = op.getValue().get("responses");
+            boolean described = false;
+            for (String status : List.of("200", "201")) {
+                described |= responses.at("/" + status + "/content").toString().contains("schema");
+            }
+            assertThat(described).as("success body of %s %s", op.getKey(), path.getKey()).isTrue();
+        }));
+    }
+
+    @Test
     void everyOperationHasASummaryAndATag() {
         api.get("paths").fields().forEachRemaining(path -> path.getValue().fields().forEachRemaining(op -> {
             String where = op.getKey() + " " + path.getKey();
