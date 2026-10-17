@@ -36,7 +36,7 @@ export function TagInput({
       const result = addTag(next, parts[index])
       if (result.error) {
         onTagsChange(next)
-        onDraftChange([...parts.slice(index), leftover].join(','))
+        onDraftChange([...parts.slice(index), ...(leftover === '' ? [] : [leftover])].join(','))
         onDraftError(result.error)
         return
       }
