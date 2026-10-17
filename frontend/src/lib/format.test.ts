@@ -1,4 +1,11 @@
-import { formatName, formatPokemonId, formatWeight } from './format'
+import {
+  formatEvolutionStep,
+  formatHeight,
+  formatName,
+  formatPokemonId,
+  formatStatName,
+  formatWeight,
+} from './format'
 import { MAX_PAGE, parsePageParam } from './pagination'
 
 describe('formatPokemonId', () => {
@@ -50,4 +57,36 @@ describe('parsePageParam (1-based, as shown to humans)', () => {
       expect(parsePageParam(raw)).toBe(1)
     },
   )
+})
+
+describe('formatHeight', () => {
+  it('shows metres with at most one decimal', () => {
+    expect(formatHeight(0.4)).toBe('0.4 m')
+    expect(formatHeight(1)).toBe('1 m')
+    expect(formatHeight(1.25)).toBe('1.3 m')
+  })
+})
+
+describe('formatStatName', () => {
+  it.each([
+    ['hp', 'HP'],
+    ['attack', 'Attack'],
+    ['special-attack', 'Special Attack'],
+  ])('formats %s as %s', (name, expected) => {
+    expect(formatStatName(name)).toBe(expected)
+  })
+})
+
+describe('formatEvolutionStep', () => {
+  it('prefers the minimum level', () => {
+    expect(formatEvolutionStep({ minLevel: 16, trigger: 'level-up' })).toBe('Level 16')
+  })
+
+  it('falls back to the trigger', () => {
+    expect(formatEvolutionStep({ minLevel: null, trigger: 'use-item' })).toBe('Use Item')
+  })
+
+  it('is null for the root of the chain', () => {
+    expect(formatEvolutionStep({ minLevel: null, trigger: null })).toBeNull()
+  })
 })

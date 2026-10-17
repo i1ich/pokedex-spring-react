@@ -14,3 +14,18 @@ export function formatName(name: string): string {
 export function formatWeight(kg: number): string {
   return `${kg.toLocaleString('en-US', { maximumFractionDigits: 1 })} kg`
 }
+
+export function formatHeight(m: number): string {
+  throw new Error(`not implemented: ${m}`)
+}
+
+export function formatStatName(name: string): string {
+  throw new Error(`not implemented: ${name}`)
+}
+
+export function formatEvolutionStep(step: {
+  minLevel: number | null
+  trigger: string | null
+}): string | null {
+  throw new Error(`not implemented: ${JSON.stringify(step)}`)
+}
