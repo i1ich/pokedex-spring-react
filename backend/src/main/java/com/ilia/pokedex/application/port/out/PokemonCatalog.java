@@ -1,6 +1,7 @@
 package com.ilia.pokedex.application.port.out;
 
 import com.ilia.pokedex.domain.model.PokemonDetails;
+import com.ilia.pokedex.domain.model.PokemonSnapshot;
 import com.ilia.pokedex.domain.model.PokemonSummary;
 
 import java.util.List;
@@ -21,6 +22,13 @@ public interface PokemonCatalog {
      * @throws com.ilia.pokedex.domain.exception.ResourceNotFoundException if no such Pokémon exists
      */
     PokemonDetails findDetails(String idOrName);
+
+    /**
+     * @param idOrName PokeAPI id or lowercase name
+     * @return the PokeAPI-owned data to copy into the local store (US03)
+     * @throws com.ilia.pokedex.domain.exception.ResourceNotFoundException if no such Pokémon exists
+     */
+    PokemonSnapshot findByIdOrName(String idOrName);
 
     record CatalogSlice(List<PokemonSummary> items, long totalCount) {
         public CatalogSlice {

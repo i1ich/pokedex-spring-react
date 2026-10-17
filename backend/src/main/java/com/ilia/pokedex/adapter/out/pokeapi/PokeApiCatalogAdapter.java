@@ -12,6 +12,7 @@ import com.ilia.pokedex.domain.exception.ResourceNotFoundException;
 import com.ilia.pokedex.domain.model.PokemonDetails;
 import com.ilia.pokedex.domain.model.PokemonDetails.EvolutionNode;
 import com.ilia.pokedex.domain.model.PokemonDetails.Stat;
+import com.ilia.pokedex.domain.model.PokemonSnapshot;
 import com.ilia.pokedex.domain.model.PokemonSummary;
 
 import java.util.Comparator;
@@ -66,6 +67,11 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
                 statsOf(pokemon),
                 species == null ? null : descriptionOf(species),
                 evolutionOf(pokemon, species));
+    }
+
+    @Override
+    public PokemonSnapshot findByIdOrName(String idOrName) {
+        throw new UnsupportedOperationException("not implemented yet");
     }
 
     private PokemonSummary toSummary(String name) {

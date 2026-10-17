@@ -6,6 +6,7 @@ import com.ilia.pokedex.domain.exception.ResourceNotFoundException;
 import com.ilia.pokedex.domain.model.PokemonDetails;
 import com.ilia.pokedex.domain.model.PokemonDetails.EvolutionNode;
 import com.ilia.pokedex.domain.model.PokemonDetails.Stat;
+import com.ilia.pokedex.domain.model.PokemonSnapshot;
 import com.ilia.pokedex.domain.model.PokemonSummary;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -198,6 +199,67 @@ class PokeApiCatalogAdapterTest {
                 .andRespond(withStatus(HttpStatus.BAD_GATEWAY));
 
         assertThatThrownBy(() -> adapter.findDetails("pikachu"))
+                .isInstanceOf(ExternalServiceException.class);
+    }
+
+    @Test
+    void buildsTheSyncSnapshotWithCategorySpriteArtworkAndOrderedAbilities() {
+        expectJson("/pokemon/bulbasaur", "pokemon-bulbasaur");
+        expectJson("/pokemon-species/1", "species-1");
+
+        PokemonSnapshot snapshot = adapter.findByIdOrName("bulbasaur");
+
+        server.verify();
+        assertThat(snapshot).isEqualTo(new PokemonSnapshot(1, "bulbasaur", "Seed Pokémon", 69, 7,
+                "https://img.test/1.png", "https://img.test/artwork/1.png",
+                java.util.List.of("overgrow", "chlorophyll")));
+    }
+
+    @Test
+    void leavesTheSnapshotCategoryEmptyWhenTheSpeciesHasNoEnglishGenus() {
+        expectJson("/pokemon/pikachu", "pokemon-pikachu");
+        expectJson("/pokemon-species/25", "species-25");
+
+        PokemonSnapshot snapshot = adapter.findByIdOrName("pikachu");
+
+        assertThat(snapshot.id()).isEqualTo(25);
+        assertThat(snapshot.category()).isNull();
+        assertThat(snapshot.weightHectograms()).isEqualTo(60);
+        assertThat(snapshot.heightDecimetres()).isEqualTo(4);
+    }
+
+    @Test
+    void keepsTheSnapshotSpriteAndLeavesTheArtworkEmptyWhenThereIsNone() {
+        expectJson("/pokemon/ditto", "pokemon-ditto");
+        expectJson("/pokemon-species/132", "species-132");
+
+        PokemonSnapshot snapshot = adapter.findByIdOrName("ditto");
+
+        assertThat(snapshot.spriteUrl()).isEqualTo("https://img.test/132.png");
+        assertThat(snapshot.artworkUrl()).isNull();
+    }
+
+    @Test
+    void buildsTheSnapshotWithoutCategoryWhenTheSpeciesIsMissing() {
+        expectJson("/pokemon/bulbasaur", "pokemon-bulbasaur");
+        server.expect(requestTo(BASE_URL + "/pokemon-species/1")).andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        assertThat(adapter.findByIdOrName("bulbasaur").category()).isNull();
+    }
+
+    @Test
+    void reportsAnUnknownPokemonAsNotFoundWhenBuildingTheSnapshot() {
+        server.expect(requestTo(BASE_URL + "/pokemon/missingno")).andRespond(withStatus(HttpStatus.NOT_FOUND));
+
+        assertThatThrownBy(() -> adapter.findByIdOrName("missingno"))
+                .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void translatesServerErrorsWhileBuildingTheSnapshotIntoExternalServiceException() {
+        server.expect(requestTo(BASE_URL + "/pokemon/pikachu")).andRespond(withStatus(HttpStatus.BAD_GATEWAY));
+
+        assertThatThrownBy(() -> adapter.findByIdOrName("pikachu"))
                 .isInstanceOf(ExternalServiceException.class);
     }
 
