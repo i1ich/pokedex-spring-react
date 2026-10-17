@@ -27,6 +27,8 @@
         <!-- Acceptance tests (BDD): Cucumber 7.x runs on the JUnit Platform; WireMock stands in for PokeAPI -->
         <cucumber.version>7.15.0</cucumber.version>
         <wiremock.version>3.13.1</wiremock.version>
+        <!-- Coverage report (no thresholds); 0.8.13 supports Java 21 class files -->
+        <jacoco.version>0.8.13</jacoco.version>
     </properties>
 
     <dependencies>
@@ -185,6 +187,28 @@
                         <goals>
                             <goal>integration-test</goal>
                             <goal>verify</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <!-- Coverage report only (no thresholds): unit/slice tests (surefire) and *IT (failsafe) feed one
+                 jacoco.exec; the HTML report is target/site/jacoco/index.html after `mvn verify` -->
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>${jacoco.version}</version>
+                <executions>
+                    <execution>
+                        <id>prepare-agent</id>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>post-integration-test</phase>
+                        <goals>
+                            <goal>report</goal>
                         </goals>
                     </execution>
                 </executions>
