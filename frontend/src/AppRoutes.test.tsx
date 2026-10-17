@@ -2,7 +2,7 @@ import { screen, within } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { SESSION_STORAGE_KEY } from './auth/session'
 import { AppRoutes } from './AppRoutes'
-import { demoSession, pageOf, pikachu, pikachuDetails } from './test/fixtures'
+import { demoSession, localPokemon, pageOf, pikachu, pikachuDetails } from './test/fixtures'
 import { renderWithProviders } from './test/helpers'
 import { json, stubFetch } from './test/http'
 
@@ -62,12 +62,29 @@ describe('AppRoutes', () => {
     expect(screen.getByRole('heading', { name: /log in/i })).toBeInTheDocument()
   })
 
-  it('shows the collection placeholder to signed-in users', () => {
+  it('shows the collection to signed-in users', async () => {
     sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(demoSession()))
+    stubFetch(() => json(pageOf([localPokemon()], { totalPages: 1 })))
 
     renderWithProviders(<AppRoutes />, { route: '/collection' })
 
     expect(screen.getByRole('heading', { name: /my collection/i })).toBeInTheDocument()
+    expect(await screen.findByRole('link', { name: 'Pikachu' })).toBeInTheDocument()
+  })
+
+  it('redirects the edit page to the login page for anonymous visitors', () => {
+    renderWithProviders(<AppRoutes />, { route: '/collection/25/edit' })
+
+    expect(screen.getByRole('heading', { name: /log in/i })).toBeInTheDocument()
+  })
+
+  it('registers the edit route for signed-in users', async () => {
+    sessionStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(demoSession()))
+    stubFetch(() => json(localPokemon()))
+
+    renderWithProviders(<AppRoutes />, { route: '/collection/25/edit' })
+
+    expect(await screen.findByRole('heading', { name: /edit pikachu/i })).toBeInTheDocument()
   })
 
   it('shows a not-found page for unknown URLs', () => {
