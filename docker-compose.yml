@@ -1,33 +1,65 @@
-# One command: `docker compose up --build`
-# The frontend service is added in task T8 (see docs/TASKS.md).
+# One command: `docker compose up --build`, then open http://localhost:3000 (log in as demo / demo12345).
+# Optional settings live in a .env file next to this one (copy .env.example); every value has a default.
+#
+#   http://localhost:3000                       the app (nginx: React build + /api proxied to the backend)
+#   http://localhost:8080/swagger-ui.html       Swagger UI, straight from the backend
+#   http://localhost:8080/actuator/health       backend health
 services:
   db:
     image: postgres:16-alpine
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: pokedex
-      POSTGRES_USER: pokedex
-      POSTGRES_PASSWORD: pokedex
+      POSTGRES_DB: ${POSTGRES_DB:-pokedex}
+      POSTGRES_USER: ${POSTGRES_USER:-pokedex}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pokedex}
     ports:
-      - "5432:5432"
+      - "${DB_PORT:-5432}:5432"
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U pokedex -d pokedex"]
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
       interval: 5s
       timeout: 3s
       retries: 10
 
   backend:
     build: ./backend
+    restart: unless-stopped
     environment:
-      DB_URL: jdbc:postgresql://db:5432/pokedex
-      DB_USER: pokedex
-      DB_PASSWORD: pokedex
+      DB_URL: jdbc:postgresql://db:5432/${POSTGRES_DB:-pokedex}
+      DB_USER: ${POSTGRES_USER:-pokedex}
+      DB_PASSWORD: ${POSTGRES_PASSWORD:-pokedex}
+      # DEV-ONLY default so a fresh clone starts. HS256 needs at least 32 bytes (the app refuses to
+      # start with less). Set your own JWT_SECRET in .env for anything that is not a local demo.
+      JWT_SECRET: ${JWT_SECRET:-docker-compose-dev-only-jwt-secret-change-me-0123456789}
+      SEED_ENABLED: ${SEED_ENABLED:-true}
     ports:
-      - "8080:8080"
+      - "${BACKEND_PORT:-8080}:8080"
     depends_on:
       db:
         condition: service_healthy
+    healthcheck:
+      # busybox wget ships with the alpine JRE image; 127.0.0.1 avoids an IPv6 "localhost" mismatch.
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/actuator/health || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 40s
+
+  frontend:
+    build: ./frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-3000}:8080"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q --spider http://127.0.0.1:8080/ || exit 1"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 5s
 
 volumes:
   pgdata:
