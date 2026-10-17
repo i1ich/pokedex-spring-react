@@ -1,8 +1,10 @@
 package com.ilia.pokedex.adapter.in.web;
 
+import com.ilia.pokedex.application.port.in.DeleteLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.GetLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.ListLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.SyncPokemonUseCase;
+import com.ilia.pokedex.application.port.in.UpdateLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.SyncPokemonUseCase.SyncResult;
 import com.ilia.pokedex.config.SecurityConfig;
 import com.ilia.pokedex.domain.exception.ExternalServiceException;
@@ -58,6 +60,12 @@ class LocalPokemonControllerTest {
 
     @MockitoBean
     private GetLocalPokemonUseCase getLocalPokemon;
+
+    @MockitoBean
+    private UpdateLocalPokemonUseCase updateLocalPokemon;
+
+    @MockitoBean
+    private DeleteLocalPokemonUseCase deleteLocalPokemon;
 
     @Test
     void answers201WithLocationAndBodyWhenThePokemonIsSyncedForTheFirstTime() throws Exception {

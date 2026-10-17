@@ -21,4 +21,7 @@ public interface LocalPokemonRepository {
      * @return the stored state, including the new version
      */
     LocalPokemon save(LocalPokemon pokemon);
+
+    /** @return {@code true} if a record was removed, {@code false} if there was none with that id */
+    boolean deleteById(int id);
 }

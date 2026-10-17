@@ -1,10 +1,12 @@
 package com.ilia.pokedex.adapter.in.web;
 
+import com.ilia.pokedex.application.port.in.DeleteLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.GetLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.GetPokemonDetailsUseCase;
 import com.ilia.pokedex.application.port.in.ListLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.in.ListPokemonUseCase;
 import com.ilia.pokedex.application.port.in.SyncPokemonUseCase;
+import com.ilia.pokedex.application.port.in.UpdateLocalPokemonUseCase;
 import com.ilia.pokedex.config.JwtProperties;
 import com.ilia.pokedex.config.SecurityConfig;
 import com.ilia.pokedex.domain.model.PageResult;
@@ -29,9 +31,11 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.Mockito.when;
 import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.jwt;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.options;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -65,6 +69,12 @@ class SecurityRulesTest {
 
     @MockitoBean
     private GetLocalPokemonUseCase getLocalPokemon;
+
+    @MockitoBean
+    private UpdateLocalPokemonUseCase updateLocalPokemon;
+
+    @MockitoBean
+    private DeleteLocalPokemonUseCase deleteLocalPokemon;
 
     @BeforeEach
     void stubEmptyPages() {
@@ -100,6 +110,24 @@ class SecurityRulesTest {
     void writingToLocalPokemonRequiresATokenToo() throws Exception {
         mvc.perform(post(LOCAL + "/sync").contentType(MediaType.APPLICATION_JSON).content("{\"idOrName\":\"pikachu\"}"))
                 .andExpect(status().isUnauthorized());
+    }
+
+    @Test
+    void updatingAndDeletingLocalPokemonRequireATokenToo() throws Exception {
+        mvc.perform(put(LOCAL + "/25").contentType(MediaType.APPLICATION_JSON).content("{\"version\":0}"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+        mvc.perform(delete(LOCAL + "/25"))
+                .andExpect(status().isUnauthorized())
+                .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON));
+    }
+
+    @Test
+    void putAndDeleteNeedNoCsrfTokenWithAValidJwt() throws Exception {
+        // 400 (no version) and 204 prove the requests got past the security chain without a CSRF token
+        mvc.perform(put(LOCAL + "/25").with(jwt()).contentType(MediaType.APPLICATION_JSON).content("{}"))
+                .andExpect(status().isBadRequest());
+        mvc.perform(delete(LOCAL + "/25").with(jwt())).andExpect(status().isNoContent());
     }
 
     @Test

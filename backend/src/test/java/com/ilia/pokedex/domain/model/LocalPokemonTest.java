@@ -67,6 +67,45 @@ class LocalPokemonTest {
     }
 
     @Test
+    void localEditReplacesOnlyTheProprietaryFieldsAndUpdatedAt() {
+        LocalPokemon stored = new LocalPokemon(1, "bulbasaur", "Seed Pokémon", 69, 7, "https://img/1.png",
+                "https://img/artwork/1.png", List.of("overgrow"), "Bulby", "Kanto", "old notes",
+                List.of("grass"), FIRST, FIRST, 3L);
+
+        LocalPokemon edited = stored.withProprietaryFields("Sprout", "Johto", "new notes",
+                List.of("starter", "grass", "starter"), LATER);
+
+        assertThat(edited.localName()).isEqualTo("Sprout");
+        assertThat(edited.region()).isEqualTo("Johto");
+        assertThat(edited.notes()).isEqualTo("new notes");
+        assertThat(edited.tags()).containsExactly("grass", "starter");
+        assertThat(edited.updatedAt()).isEqualTo(LATER);
+        assertThat(edited.id()).isEqualTo(1);
+        assertThat(edited.name()).isEqualTo("bulbasaur");
+        assertThat(edited.category()).isEqualTo("Seed Pokémon");
+        assertThat(edited.weightHectograms()).isEqualTo(69);
+        assertThat(edited.heightDecimetres()).isEqualTo(7);
+        assertThat(edited.spriteUrl()).isEqualTo("https://img/1.png");
+        assertThat(edited.artworkUrl()).isEqualTo("https://img/artwork/1.png");
+        assertThat(edited.abilities()).containsExactly("overgrow");
+        assertThat(edited.syncedAt()).isEqualTo(FIRST);
+        assertThat(edited.version()).isEqualTo(3L);
+    }
+
+    @Test
+    void localEditCanClearEveryProprietaryField() {
+        LocalPokemon stored = new LocalPokemon(1, "bulbasaur", null, 69, 7, null, null, List.of(),
+                "Bulby", "Kanto", "notes", List.of("grass"), FIRST, FIRST, 0L);
+
+        LocalPokemon edited = stored.withProprietaryFields(null, null, null, null, LATER);
+
+        assertThat(edited.localName()).isNull();
+        assertThat(edited.region()).isNull();
+        assertThat(edited.notes()).isNull();
+        assertThat(edited.tags()).isEmpty();
+    }
+
+    @Test
     void convertsUnitsToKilogramsAndMetres() {
         LocalPokemon pokemon = LocalPokemon.firstSync(bulbasaur(), FIRST);
 

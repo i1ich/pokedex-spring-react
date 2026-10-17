@@ -1,5 +1,6 @@
 package com.ilia.pokedex.adapter.out.persistence;
 
+import com.ilia.pokedex.domain.exception.ConflictException;
 import com.ilia.pokedex.domain.model.LocalPokemon;
 import com.ilia.pokedex.domain.model.PageQuery;
 import com.ilia.pokedex.domain.model.PageResult;
@@ -10,6 +11,8 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.testcontainers.service.connection.ServiceConnection;
 import org.springframework.context.annotation.Import;
+import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.dao.OptimisticLockingFailureException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -23,6 +26,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 /**
  * Runs the adapter against a real PostgreSQL with the Flyway schema and {@code ddl-auto: validate}, so the
@@ -115,12 +119,71 @@ class JpaLocalPokemonRepositoryAdapterIT {
     }
 
     @Test
-    void rejectsASaveWithAStaleVersion() {
+    void translatesAStaleVersionIntoAConflict() {
         LocalPokemon stored = adapter.save(pokemon(25, "pikachu", List.of("static"), List.of()));
         adapter.save(stored);
 
-        org.assertj.core.api.Assertions.assertThatThrownBy(() -> adapter.save(stored))
-                .isInstanceOf(org.springframework.dao.OptimisticLockingFailureException.class);
+        assertThatThrownBy(() -> adapter.save(stored))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("Pokémon 25 was modified concurrently; reload and try again")
+                .hasCauseInstanceOf(OptimisticLockingFailureException.class);
+    }
+
+    @Test
+    void ofTwoUpdatesBuiltFromTheSameVersionOnlyTheFirstWins() {
+        LocalPokemon stored = adapter.save(pokemon(25, "pikachu", List.of("static"), List.of()));
+        LocalPokemon firstEdit = withProprietary(stored, "First", null, null, List.of("one"));
+        LocalPokemon secondEdit = withProprietary(stored, "Second", null, null, List.of("two"));
+
+        LocalPokemon winner = adapter.save(firstEdit);
+
+        assertThatThrownBy(() -> adapter.save(secondEdit)).isInstanceOf(ConflictException.class);
+        assertThat(adapter.findById(25)).contains(winner);
+        assertThat(winner.localName()).isEqualTo("First");
+        assertThat(adapter.findById(25).orElseThrow().tags()).containsExactly("one");
+    }
+
+    @Test
+    void doesNotResurrectARecordThatWasDeletedAfterItWasRead() {
+        LocalPokemon stored = adapter.save(pokemon(25, "pikachu", List.of("static"), List.of()));
+        adapter.deleteById(25);
+
+        assertThatThrownBy(() -> adapter.save(withProprietary(stored, "Sparky", null, null, List.of())))
+                .isInstanceOf(ConflictException.class);
+        assertThat(adapter.findById(25)).isEmpty();
+    }
+
+    @Test
+    void translatesAConcurrentFirstInsertOfTheSameIdIntoAConflict() {
+        adapter.save(pokemon(25, "pikachu", List.of("static"), List.of()));
+
+        assertThatThrownBy(() -> adapter.save(pokemon(25, "pikachu", List.of("static"), List.of())))
+                .isInstanceOf(ConflictException.class)
+                .hasMessage("Pokémon 25 was synced concurrently; retry")
+                .hasCauseInstanceOf(DataIntegrityViolationException.class);
+        assertThat(adapter.findById(25).orElseThrow().version()).isZero();
+    }
+
+    @Test
+    void deletesARecordTogetherWithItsAbilitiesAndTags() {
+        adapter.save(pokemon(25, "pikachu", List.of("static", "lightning-rod"), List.of("a", "b")));
+        adapter.save(pokemon(26, "raichu", List.of("static"), List.of("c")));
+
+        assertThat(adapter.deleteById(25)).isTrue();
+
+        assertThat(adapter.findById(25)).isEmpty();
+        assertThat(adapter.findById(26)).isPresent();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM local_pokemon_ability WHERE pokemon_id = 25", Integer.class))
+                .isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM local_pokemon_tag WHERE pokemon_id = 25", Integer.class))
+                .isZero();
+        assertThat(jdbc.queryForObject("SELECT count(*) FROM local_pokemon_tag WHERE pokemon_id = 26", Integer.class))
+                .isEqualTo(1);
+    }
+
+    @Test
+    void deletingAnUnknownRecordReportsFalse() {
+        assertThat(adapter.deleteById(999)).isFalse();
     }
 
     @Test
