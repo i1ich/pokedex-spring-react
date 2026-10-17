@@ -216,3 +216,20 @@ Chronological log of the prompts used to build this project with Claude (agentic
 - Rejected from my own first draft: copying the fixtures or writing richer ones. The existing fixtures are deliberately partial (Pikachu has no abilities or genus), so each scenario uses the fixture that has what it asserts (Bulbasaur and Deoxys for US01 and for the sync of category and abilities, Pikachu and Eevee for the detail view and the evolution tree) and nothing was changed in `src/test/resources/pokeapi`.
 - Mine, corrected on the way: a bash heredoc with accented text failed to parse (same as entries 007 to 009), so the files were written with the editor tool; the "local name over 100 characters" example had 92 characters, the one failure of the first run (the backend correctly answered 200), fixed to 101. No scenario was weakened and no backend bug was found.
 - Left open: a re-sync inside the 6 h cache window returns the cached PokeAPI data, so "refreshes the PokeAPI fields" cannot be shown with changed upstream data without clearing the cache; the scenario therefore only proves that the local fields survive and the status is 200. Scenarios pay a 20 s Spring plus container start once per run (about 40 s for the whole suite).
+
+---
+
+## 011 — T8 Docker Compose (subagent)
+
+**Prompt (summarised):** T8 from `docs/TASKS.md`: a frontend image (multi-stage Node build, nginx with SPA fallback and `/api` proxied to the backend so the browser is same-origin), and a compose file with `db`, `backend`, `frontend` (port 3000), health checks and `depends_on: condition: service_healthy`. The orchestrator added: build with an empty `VITE_API_URL`, a dev-only `JWT_SECRET` default plus `.env.example`, configurable host ports, a CSP that lets PokeAPI sprites load, and a check from a clean clone under a separate project name, without ever touching the existing `pgdata` volume.
+
+**Output:**
+
+- `frontend/Dockerfile` (`node:22-alpine` build with `ARG VITE_API_URL=""`, runtime `nginxinc/nginx-unprivileged:1.27-alpine`, non-root, port 8080 inside), `frontend/nginx.conf`, `frontend/security-headers.conf`, `frontend/.dockerignore`, `docker-compose.yml` (three services, health checks, `${VAR:-default}` for secrets and ports), `.env.example`.
+- No application code was changed, so there was no red/green cycle: the verification is running the stack from a clean clone (details in the task report). Three commits `build(docker)`.
+
+**Review notes:**
+
+- Chosen, not defaulted: nginx resolves `backend` per request (`resolver 127.0.0.11` plus a variable in `proxy_pass`), so a recreated backend container does not leave nginx pointing at a dead IP; the security headers live in an included snippet because `add_header` is not inherited into a location that sets its own; `style-src 'self'` without `unsafe-inline` works because React writes `style` through the CSSOM (the stat bars rendered with their widths, no violation); the health checks use `127.0.0.1`, not `localhost`, to avoid an IPv6 mismatch in busybox `wget`; the build stage does not run `npm test` (the build already type-checks, tests belong to CI and the developer).
+- Corrected after looking at real responses: the first nginx config duplicated `X-Frame-Options` and `X-Content-Type-Options` on proxied API responses (the backend sets them already), and sent two `Cache-Control` headers for hashed assets (`expires` plus `add_header`). Both fixed in follow-up commits. Rejected: proxying Swagger UI and the actuator through nginx, since the SPA's CSP would break Swagger's inline scripts and the actuator should not be public; they stay on `http://localhost:8080`.
+- Left open: changing `POSTGRES_*` in `.env` after the volume exists does not change the existing database user; the compose file still publishes the database and backend ports for development convenience.
