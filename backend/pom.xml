@@ -20,6 +20,8 @@
     <properties>
         <java.version>21</java.version>
         <archunit.version>1.4.1</archunit.version>
+        <!-- 1.21.3 (Boot 3.5.6 default) uses Docker API 1.32, rejected by Docker Engine 29+ (min API 1.44) -->
+        <testcontainers.version>1.21.4</testcontainers.version>
     </properties>
 
     <dependencies>
