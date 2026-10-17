@@ -81,7 +81,7 @@ class DemoDataSeederTest {
 
     @Test
     void doesNothingWhenEverythingIsStored() {
-        doAnswer(call -> stored(String.valueOf(call.getArgument(0)))).when(getLocalPokemon).get(anyInt());
+        doAnswer(call -> stored(String.valueOf(call.<Integer>getArgument(0)))).when(getLocalPokemon).get(anyInt());
 
         SeedReport report = seeder(List.of(1, 2, 3)).seed();
 

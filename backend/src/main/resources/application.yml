@@ -31,6 +31,11 @@ app:
     ttl: 1h
   cors:
     allowed-origins: http://localhost:5173,http://localhost:3000
+  seed:
+    # Demo data: on startup, in the background, sync these PokeAPI ids that are not stored yet (never
+    # overwrites anything). Failures are logged and do not stop the application. Tests turn it off.
+    enabled: ${SEED_ENABLED:true}
+    pokemon-ids: 1,2,3,4,5,6,7,8,9,10,11,12
 
 management:
   endpoints:
