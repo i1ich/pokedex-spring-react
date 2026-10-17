@@ -120,3 +120,22 @@ Chronological log of the prompts used to build this project with Claude (agentic
 - Mine, corrected on the way: a UTC assertion that compared `ZoneId.of("UTC")` with `ZoneOffset.UTC`; a first Accept test that got 200 because the mock returned `null`; a heredoc with quotes that wrote no files (re-done with the editor tool).
 - Tried and abandoned: `allow-coercion-of-scalars=false` does not stop `{"title": 123}` from being coerced to a string (Jackson needs a `CoercionConfig`, which the web slice does not load). The test was removed from the green commit and the limitation is recorded as open in `review.md`.
 - Left open on purpose and listed in `review.md`: lost updates on PUT (needs an `If-Match`/version contract), the 401 body format (platform), 409 for a valid token whose user is missing from `users`, silent unknown properties, audit timestamps not from the `Clock`.
+
+---
+
+## 006 — T6 frontend scaffold (subagent)
+
+**Prompt (summarised):** T6 from `docs/TASKS.md`: a `frontend/` with Vite + React + TypeScript, TanStack Query, React Router, ESLint, Prettier, Vitest + Testing Library. An API client with a base URL from `VITE_API_URL`, JWT handling and problem+json parsing into a typed `ApiError`; DTO types from the backend; an auth context with `ProtectedRoute`; `usePokemonPage` with `keepPreviousData`; a layout and the Browse page with `?page=` in the URL. The orchestrator added constraints that come from backend behaviour: the token must only go on requests that need it (an expired token gets 401 even on public routes), a 401 must sign the user out, an empty `VITE_API_URL` means same-origin, non-JSON error bodies (nginx 502) must not break error handling, and the browser console must stay clean. Commit order was scaffold, then `[red]`, then `[green]`.
+
+**Output:**
+
+- Commit 1: generated Vite template with the demo content removed, tooling config and one smoke test.
+- Commit 2 (`[red]`): 11 test files, 110 tests, all failing for missing modules. Covers the client (URL resolution, token placement, error parsing, 401), the session store, `AuthProvider`, `ProtectedRoute`, the query client, `usePokemonPage`, `format`/`pagination` helpers, `Pagination`, `BrowsePage` and the route table. The test setup fails any test that writes to `console.error`/`console.warn`, which turns "zero console warnings" (React keys, `act()`, router) into an enforced rule.
+- Commit 3 (`[green]`): the implementation, a single stylesheet, placeholder routes for the pages T7 will replace. `npm run build`, `lint` and `test` pass (110 tests). Smoke-tested in the browser pane against a backend built from the current `main`: Browse renders, `?page=2` and the Next link work, no console output under `StrictMode`, no horizontal scroll at 375 px.
+
+**Review notes:**
+
+- Corrected by running: `jsdom` 30 (the newest) throws `ERR_REQUIRE_ESM` on Node 20.15, so `jsdom@26` is pinned; Vite 6 and Vitest 3 were chosen for the same Node reason.
+- Corrected by running: a context object in `auth/authContext.ts` next to the provider `auth/AuthContext.tsx` resolved to the wrong file on Windows (case-insensitive), giving "Element type is invalid". Renamed to `context.ts`. A bash heredoc also silently truncated several files containing quotes, so the files were written with the editor tool and the result checked.
+- Design choices I made rather than accepted from a default: the token is read by the client from a small session store (not passed through React), so a 401 can clear it from plain code and the UI follows through `useSyncExternalStore`; the stored value is validated and dropped when malformed or expired; `VITE_API_URL` is resolved at call time so `undefined` and `''` are tested separately.
+- Found by the browser check, not by tests: an older backend container on :8080 (built before the CORS config) answered without `Access-Control-Allow-Origin`, so the first smoke test failed with a CORS error. It was not touched; a throw-away backend built from a copy of the current source on :8081 and its own Postgres container on :5433 were used instead, then removed.
