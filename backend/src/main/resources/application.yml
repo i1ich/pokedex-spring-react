@@ -1,0 +1,34 @@
+spring:
+  application:
+    name: pokedex
+  datasource:
+    url: ${DB_URL:jdbc:postgresql://localhost:5432/pokedex}
+    username: ${DB_USER:pokedex}
+    password: ${DB_PASSWORD:pokedex}
+  jpa:
+    open-in-view: false
+    hibernate:
+      ddl-auto: validate
+  flyway:
+    enabled: true
+  cache:
+    type: caffeine
+    cache-names: pokeapi-list,pokeapi-pokemon,pokeapi-species
+    caffeine:
+      # PokeAPI data is effectively static: bounded size, long TTL.
+      spec: maximumSize=5000,expireAfterWrite=6h,recordStats
+
+pokeapi:
+  base-url: ${POKEAPI_BASE_URL:https://pokeapi.co/api/v2}
+  connect-timeout: 3s
+  read-timeout: 10s
+
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,caches,metrics
+
+server:
+  error:
+    include-stacktrace: never
