@@ -70,3 +70,26 @@ Chronological log of the prompts used to build this project with Claude (agentic
 - The new services would have needed their own copy of the idOrName regex and the page/size limits. Instead those rules were moved into `PokemonIdentifier` and `PageQuery` in a separate `refactor` commit before the red step, and US01/US02 now use them too; their old tests still pass unchanged.
 - Re-sync always bumps `version` because `syncedAt` / `updatedAt` change, which is intended: a client holding an older copy must re-read before editing.
 - The sync is a read-then-write without a lock, so two concurrent first syncs of the same Pokémon can hit the primary key and return a 500. Left open on purpose; the effect is a retry.
+
+---
+
+## 004 — T4 authentication (subagent)
+
+**Prompt (summarised):** a subagent received the T4 task from `docs/TASKS.md` plus the shared rules and orchestrator notes: register / login / me with HS256 JWT and BCrypt, public versus protected routes (`/api/v1/pokemon/**` public, `/api/v1/local-pokemon/**` protected), 401 and 403 as `application/problem+json`, CORS for the two frontend origins, stateless sessions with CSRF off, a seeded `demo` user, and a startup failure for a short secret. Strict TDD with separate `[red]` and `[green]` commits; the credential rules had to live in the framework-free core.
+
+**Output:**
+
+- Domain and application: `User` (record plus the username and password rules, and the "username taken" conflict), `ConflictException` (409, reusable by T3), `AuthenticationFailedException` (401, one fixed message), `RegisterUserUseCase` / `AuthenticateUserUseCase`, their services, and the `UserRepository`, `PasswordHasher` and `TokenIssuer` ports.
+- Adapters: `BCryptPasswordHasher`, `JwtTokenIssuer`, `JpaUserRepositoryAdapter` (+ entity and Spring Data interface), `AuthController` with `CredentialsRequest` / `LoginResponse` / `UserResponse`, and the `ProblemDetail` entry point and access-denied handler.
+- Config: `SecurityConfig` (filter chain, `NimbusJwtDecoder` HS256, CORS), `AuthAdaptersConfig` (hasher, encoder, issuer), `JwtProperties` (fails startup under 32 bytes), two beans in `UseCaseConfig`, `app.jwt` / `app.cors` in `application.yml`, and `V2__seed_demo_user.sql`.
+- Tests: `UserTest`, `RegisterUserServiceTest`, `AuthenticateUserServiceTest`, `BCryptPasswordHasherTest`, `JwtTokenIssuerTest`, `JwtPropertiesTest`, `ProblemDetailSecurityHandlersTest`, `AuthControllerTest`, `SecurityRulesTest` (public vs protected, valid / expired / foreign-secret / garbage tokens, CORS, no session), `JpaUserRepositoryAdapterIT`, `AuthFlowIT`; the two existing web slice tests import `SecurityConfig` (`LocalPokemonControllerTest` runs as `@WithMockUser`).
+
+**Review notes:**
+
+- Usernames are trimmed and lower-cased before validation, on register and on login, so `Demo` and `demo` are the same account. Login does not re-validate the format: a name that could never be registered is just an unknown user (401), not a 400.
+- The suggested "same message for unknown user and wrong password" was not enough on its own: an unknown user skips the BCrypt comparison and answers measurably faster. The login service now compares against a throw-away hash for unknown users, so both failures cost one comparison (unit-tested).
+- Password upper bound of 72 bytes was added although the task only says "at least 8": BCrypt silently ignores bytes beyond 72, so a longer password would be accepted but not fully checked.
+- `/me` is answered from the token (subject and `ROLE_` authorities) rather than a use case and a database read; the cost is that a deleted user keeps a valid `/me` until the token expires (1 h).
+- `AuthenticationFailedException` also sends `WWW-Authenticate: Bearer`, so login failures and filter-chain 401s look identical to a client.
+- The seed hash was generated with the real encoder and is asserted in both `BCryptPasswordHasherTest` (literal hash) and `AuthFlowIT` (login as `demo`), rather than trusting a hash copied from the model's memory.
+- First attempt at the tests used `"x".repeat(50)` inside `@ValueSource`, which is not a constant expression and did not compile; those cases became separate tests. A strict-stubs failure (`PotentialStubbingProblem`) in the "same message" test was fixed by stubbing the throw-away-hash comparison too, not by loosening the mock. Shell heredocs and `git commit -F -` again mangled multi-line input in PowerShell; files were written with the editor tool and the commit message passed from a file.
