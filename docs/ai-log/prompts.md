@@ -67,6 +67,6 @@ Chronological log of the prompts used to build this project with Claude (agentic
 **Review notes:**
 
 - The domain `version` is a nullable `Long`, with `null` meaning "not stored yet". A primitive `long` would make Spring Data treat every record with an assigned id as existing and `merge` a row that is not there; the wrapper keeps persist vs merge unambiguous and mirrors JPA.
-- The idOrName regex and the page/size limits were duplicated in the first draft of the new services. They were moved into `PokemonIdentifier` and `PageQuery` in a separate `refactor` commit before the red step, and US01/US02 now use them too; their old tests still pass unchanged.
+- The new services would have needed their own copy of the idOrName regex and the page/size limits. Instead those rules were moved into `PokemonIdentifier` and `PageQuery` in a separate `refactor` commit before the red step, and US01/US02 now use them too; their old tests still pass unchanged.
 - Re-sync always bumps `version` because `syncedAt` / `updatedAt` change, which is intended: a client holding an older copy must re-read before editing.
 - The sync is a read-then-write without a lock, so two concurrent first syncs of the same Pokémon can hit the primary key and return a 500. Left open on purpose; the effect is a retry.
