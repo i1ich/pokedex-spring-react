@@ -9,7 +9,8 @@ export function createTestQueryClient(): QueryClient {
 }
 
 interface WrapperOptions {
-  route?: string
+  /** A path, or an entry with router state (e.g. the `from` a protected route passes to /login). */
+  route?: string | { pathname: string; state?: unknown }
   queryClient?: QueryClient
 }
 
