@@ -3,7 +3,7 @@ package com.ilia.pokedex.application.service;
 import com.ilia.pokedex.application.port.in.ListPokemonUseCase;
 import com.ilia.pokedex.application.port.out.PokemonCatalog;
 import com.ilia.pokedex.application.port.out.PokemonCatalog.CatalogSlice;
-import com.ilia.pokedex.domain.exception.InvalidRequestException;
+import com.ilia.pokedex.domain.model.PageQuery;
 import com.ilia.pokedex.domain.model.PageResult;
 import com.ilia.pokedex.domain.model.PokemonSummary;
 
@@ -20,20 +20,8 @@ public class ListPokemonService implements ListPokemonUseCase {
 
     @Override
     public PageResult<PokemonSummary> list(int page, int size) {
-        validate(page, size);
-        CatalogSlice slice = catalog.findSlice(page * size, size);
+        PageQuery query = new PageQuery(page, size);
+        CatalogSlice slice = catalog.findSlice(query.offset(), query.size());
         return new PageResult<>(slice.items(), page, size, slice.totalCount());
-    }
-
-    private static void validate(int page, int size) {
-        if (page < 0) {
-            throw new InvalidRequestException("page", "page must be greater than or equal to 0");
-        }
-        if (size < 1 || size > MAX_PAGE_SIZE) {
-            throw new InvalidRequestException("size", "size must be between 1 and " + MAX_PAGE_SIZE);
-        }
-        if ((long) page * size > Integer.MAX_VALUE) {
-            throw new InvalidRequestException("page", "page is too large");
-        }
     }
 }
