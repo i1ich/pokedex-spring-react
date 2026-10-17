@@ -40,6 +40,7 @@ import com.example.tasks.dto.TaskResponse;
 import com.example.tasks.dto.UpdateTaskRequest;
 import com.example.tasks.service.TaskNotFoundException;
 import com.example.tasks.service.TaskService;
+import com.example.tasks.service.TaskValidationException;
 
 @WebMvcTest(TaskController.class)
 @Import(TestSecurityConfig.class)
@@ -143,13 +144,17 @@ class TaskControllerTest {
 
     @Test
     void createWithPastDueDateReturns400() throws Exception {
+        // The rule lives in TaskService (single clock); the controller must map its exception to problem+json.
+        given(taskService.create(eq("alice"), any(CreateTaskRequest.class)))
+                .willThrow(new TaskValidationException("due_date", "must not be in the past"));
+
         mockMvc.perform(post("/api/tasks")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content("{\"title\":\"old\",\"due_date\":\"2000-01-01\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(content().contentTypeCompatibleWith(MediaType.APPLICATION_PROBLEM_JSON))
-                .andExpect(jsonPath("$.errors[0].field").value("due_date"));
-        verifyNoInteractions(taskService);
+                .andExpect(jsonPath("$.errors[0].field").value("due_date"))
+                .andExpect(jsonPath("$.errors[0].message").value("must not be in the past"));
     }
 
     @Test

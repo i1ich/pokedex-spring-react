@@ -21,6 +21,9 @@ import com.example.tasks.repository.TaskRepository;
 @Service
 public class TaskService {
 
+    /** Upper bound on page size; the service enforces it so no caller can request an unbounded page. */
+    public static final int MAX_PAGE_SIZE = 100;
+
     private final TaskRepository taskRepository;
     private final Clock clock;
 
@@ -47,6 +50,12 @@ public class TaskService {
 
     @Transactional(readOnly = true)
     public PageResponse<TaskResponse> list(String owner, TaskStatus status, int page, int size) {
+        if (page < 0) {
+            throw new TaskValidationException("page", "must be greater than or equal to 0");
+        }
+        if (size < 1 || size > MAX_PAGE_SIZE) {
+            throw new TaskValidationException("size", "must be between 1 and " + MAX_PAGE_SIZE);
+        }
         Pageable pageable = PageRequest.of(page, size);
         Page<Task> result = status == null
                 ? taskRepository.searchByOwner(owner, pageable)

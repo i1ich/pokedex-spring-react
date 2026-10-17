@@ -23,6 +23,7 @@ import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.validation.method.ParameterValidationResult;
+import org.springframework.web.HttpMediaTypeNotAcceptableException;
 import org.springframework.web.HttpMediaTypeNotSupportedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -153,6 +154,13 @@ public class GlobalExceptionHandler {
                                                                      HttpServletRequest request) {
         return problem(HttpStatus.UNSUPPORTED_MEDIA_TYPE, "unsupported-media-type", "Unsupported Media Type",
                 "Content type is not supported; use application/json", request, null);
+    }
+
+    @ExceptionHandler(HttpMediaTypeNotAcceptableException.class)
+    public ResponseEntity<ProblemDetail> handleMediaTypeNotAcceptable(HttpMediaTypeNotAcceptableException ex,
+                                                                      HttpServletRequest request) {
+        return problem(HttpStatus.NOT_ACCEPTABLE, "not-acceptable", "Not Acceptable",
+                "This API only produces application/json", request, null);
     }
 
     @ExceptionHandler(AuthenticationException.class)

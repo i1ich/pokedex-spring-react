@@ -4,7 +4,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 import java.time.Clock;
 import java.time.ZoneId;
-import java.time.ZoneOffset;
 import java.util.TimeZone;
 
 import org.junit.jupiter.api.AfterEach;
@@ -31,7 +30,7 @@ class ClockConfigTest {
 
     @Test
     void whatCountsAsTodayDoesNotDependOnTheHostTimeZone() {
-        runner.run(context -> assertThat(context.getBean(Clock.class).getZone()).isEqualTo(ZoneOffset.UTC));
+        runner.run(context -> assertThat(context.getBean(Clock.class).getZone()).isEqualTo(ZoneId.of("UTC")));
     }
 
     @Test

@@ -12,6 +12,14 @@ spring:
   flyway:
     enabled: true
     locations: classpath:db/migration
+  jackson:
+    deserialization:
+      # an enum is sent by name only; ordinals (status: 1) would tie the API to declaration order
+      fail-on-numbers-for-enums: true
+
+app:
+  # zone that decides what "today" means for the due-date rule; override with APP_TIME_ZONE
+  time-zone: ${APP_TIME_ZONE:UTC}
 
 server:
   error:

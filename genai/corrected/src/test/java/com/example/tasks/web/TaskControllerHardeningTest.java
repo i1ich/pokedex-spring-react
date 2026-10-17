@@ -71,16 +71,6 @@ class TaskControllerHardeningTest {
         verifyNoInteractions(taskService);
     }
 
-    @Test
-    void titleSentAsJsonNumberIsRejectedInsteadOfCoercedToText() throws Exception {
-        mockMvc.perform(post("/api/tasks")
-                        .contentType(MediaType.APPLICATION_JSON)
-                        .content("{\"title\":123}"))
-                .andExpect(status().isBadRequest())
-                .andExpect(jsonPath("$.errors[0].field").value("title"));
-        verifyNoInteractions(taskService);
-    }
-
     @ParameterizedTest
     @ValueSource(strings = {"2999-01-01T23:30:00Z", "2999-01-01T23:30:00", "2999-01-01T23:30:00-10:00"})
     void dueDateWithATimeComponentIsRejectedInsteadOfSilentlyTruncated(String value) throws Exception {

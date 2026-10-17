@@ -4,6 +4,7 @@ import java.time.LocalDate;
 
 import com.example.tasks.domain.TaskStatus;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -13,5 +14,5 @@ public record UpdateTaskRequest(
         @NotBlank @Size(max = 200) String title,
         @Size(max = 2000) String description,
         @NotNull TaskStatus status,
-        @JsonProperty("due_date") LocalDate dueDate) {
+        @JsonProperty("due_date") @JsonDeserialize(using = StrictIsoDateDeserializer.class) LocalDate dueDate) {
 }
