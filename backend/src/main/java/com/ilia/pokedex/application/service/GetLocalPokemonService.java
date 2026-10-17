@@ -2,6 +2,8 @@ package com.ilia.pokedex.application.service;
 
 import com.ilia.pokedex.application.port.in.GetLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.out.LocalPokemonRepository;
+import com.ilia.pokedex.domain.exception.InvalidRequestException;
+import com.ilia.pokedex.domain.exception.ResourceNotFoundException;
 import com.ilia.pokedex.domain.model.LocalPokemon;
 
 import java.util.Objects;
@@ -17,6 +19,10 @@ public class GetLocalPokemonService implements GetLocalPokemonUseCase {
 
     @Override
     public LocalPokemon get(int id) {
-        throw new UnsupportedOperationException("not implemented yet");
+        if (id < 1) {
+            throw new InvalidRequestException("id", "id must be greater than or equal to 1");
+        }
+        return repository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Local Pokemon", id));
     }
 }

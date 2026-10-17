@@ -48,12 +48,22 @@ public record LocalPokemon(
 
     /** First sync of a Pokémon: PokeAPI data only, no proprietary fields, not stored yet. */
     public static LocalPokemon firstSync(PokemonSnapshot snapshot, Instant now) {
-        throw new UnsupportedOperationException("not implemented yet");
+        return new LocalPokemon(
+                snapshot.id(), snapshot.name(), snapshot.category(),
+                snapshot.weightHectograms(), snapshot.heightDecimetres(),
+                snapshot.spriteUrl(), snapshot.artworkUrl(), snapshot.abilities(),
+                null, null, null, List.of(),
+                now, now, null);
     }
 
     /** Re-sync: overwrites every PokeAPI field, keeps the proprietary fields and the version. */
     public LocalPokemon resyncedWith(PokemonSnapshot snapshot, Instant now) {
-        throw new UnsupportedOperationException("not implemented yet");
+        return new LocalPokemon(
+                id, snapshot.name(), snapshot.category(),
+                snapshot.weightHectograms(), snapshot.heightDecimetres(),
+                snapshot.spriteUrl(), snapshot.artworkUrl(), snapshot.abilities(),
+                localName, region, notes, tags,
+                now, now, version);
     }
 
     public double weightKg() {

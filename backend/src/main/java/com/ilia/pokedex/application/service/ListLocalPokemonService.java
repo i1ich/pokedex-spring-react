@@ -3,6 +3,7 @@ package com.ilia.pokedex.application.service;
 import com.ilia.pokedex.application.port.in.ListLocalPokemonUseCase;
 import com.ilia.pokedex.application.port.out.LocalPokemonRepository;
 import com.ilia.pokedex.domain.model.LocalPokemon;
+import com.ilia.pokedex.domain.model.PageQuery;
 import com.ilia.pokedex.domain.model.PageResult;
 
 import java.util.Objects;
@@ -18,6 +19,6 @@ public class ListLocalPokemonService implements ListLocalPokemonUseCase {
 
     @Override
     public PageResult<LocalPokemon> list(int page, int size) {
-        throw new UnsupportedOperationException("not implemented yet");
+        return repository.findAll(new PageQuery(page, size));
     }
 }

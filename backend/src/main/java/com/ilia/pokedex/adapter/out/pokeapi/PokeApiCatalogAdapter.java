@@ -71,7 +71,16 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
 
     @Override
     public PokemonSnapshot findByIdOrName(String idOrName) {
-        throw new UnsupportedOperationException("not implemented yet");
+        PokemonResponse pokemon = client.fetchPokemon(idOrName);
+        return new PokemonSnapshot(
+                pokemon.id(),
+                pokemon.name(),
+                categoryOf(pokemon),
+                pokemon.weight(),
+                pokemon.height(),
+                spriteOf(pokemon),
+                artworkOf(pokemon),
+                abilityNames(pokemon));
     }
 
     private PokemonSummary toSummary(String name) {
@@ -79,7 +88,7 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
         return new PokemonSummary(
                 pokemon.id(),
                 pokemon.name(),
-                pokemon.sprites() == null ? null : pokemon.sprites().frontDefault(),
+                spriteOf(pokemon),
                 categoryOf(pokemon),
                 pokemon.weight(),
                 abilityNames(pokemon));
@@ -107,17 +116,23 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
 
     /** Official artwork when present, otherwise the plain front sprite. */
     private static String imageOf(PokemonResponse pokemon) {
+        String artwork = artworkOf(pokemon);
+        return artwork != null ? artwork : spriteOf(pokemon);
+    }
+
+    /** The official artwork, or {@code null} when PokeAPI has none. */
+    private static String artworkOf(PokemonResponse pokemon) {
         PokemonResponse.Sprites sprites = pokemon.sprites();
-        if (sprites == null) {
+        if (sprites == null || sprites.other() == null || sprites.other().officialArtwork() == null) {
             return null;
         }
-        if (sprites.other() != null && sprites.other().officialArtwork() != null) {
-            String artwork = sprites.other().officialArtwork().frontDefault();
-            if (artwork != null && !artwork.isBlank()) {
-                return artwork;
-            }
-        }
-        return sprites.frontDefault();
+        String artwork = sprites.other().officialArtwork().frontDefault();
+        return artwork == null || artwork.isBlank() ? null : artwork;
+    }
+
+    /** The plain front sprite, or {@code null} when PokeAPI has none. */
+    private static String spriteOf(PokemonResponse pokemon) {
+        return pokemon.sprites() == null ? null : pokemon.sprites().frontDefault();
     }
 
     private static List<String> typeNames(PokemonResponse pokemon) {
