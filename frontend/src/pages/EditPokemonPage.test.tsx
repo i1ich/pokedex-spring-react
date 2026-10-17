@@ -308,10 +308,22 @@ describe('EditPokemonPage: tags', () => {
       await userEvent.type(input, `${raw}{Enter}`)
 
       expect(tagNames()).toEqual([])
+      expect(input).toHaveValue(raw) // left as typed, so it can be corrected
       expect(input).toBeInvalid()
       expect(input).toHaveAccessibleDescription(/lowercase letters, digits and single hyphens/i)
     },
   )
+
+  it('keeps the rejected part of a pasted list as draft and adds the ones before it', async () => {
+    const input = await openEmpty()
+    await userEvent.click(input)
+
+    await userEvent.paste('good,bad tag,other')
+
+    expect(tagNames()).toEqual(['good'])
+    expect(input).toHaveValue('bad tag,other')
+    expect(input).toBeInvalid()
+  })
 
   it('rejects an eleventh distinct tag', async () => {
     const input = await openEmpty()
