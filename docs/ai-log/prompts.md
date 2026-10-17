@@ -49,3 +49,24 @@ Chronological log of the prompts used to build this project with Claude (agentic
 - Only the first `evolution_details` entry is mapped (`minLevel`, trigger). Some species have several alternative ways to evolve; that detail is intentionally dropped.
 - Description normalisation collapses every whitespace run, not only `\n` and `\f`; PokeAPI also uses soft line breaks in other forms.
 - The first attempt to apply the test edits through a shell heredoc failed because of quoting; the edits were redone from script files. No generated suggestion was rejected on design grounds.
+
+---
+
+## 003 — T2 persistence + US03 sync (subagent)
+
+**Prompt (summarised):** a subagent received the T2 task from `docs/TASKS.md` plus the shared rules and orchestrator notes: copy a Pokémon from PokeAPI into `local_pokemon` idempotently (`POST /api/v1/local-pokemon/sync`: 201 + `Location` for a new record, 200 for a re-sync that refreshes the PokeAPI fields and keeps `localName`, `region`, `notes`, `tags`), plus `GET /api/v1/local-pokemon` and `/{id}`. Strict TDD with separate `[red]` and `[green]` commits, JPA `@Version` for T3, a deterministic `Clock`, Testcontainers for the adapter, and no schema change (`V1__init.sql` is fixed). It had to reuse T1's `idOrName` rule instead of copying the regex.
+
+**Output:**
+
+- Domain: `LocalPokemon` (record with `firstSync` / `resyncedWith`), `PokemonSnapshot` (the PokeAPI-owned fields a sync overwrites), and two shared rules extracted from US01/US02: `PokemonIdentifier` and `PageQuery`.
+- Application: `SyncPokemonUseCase` (returns `SyncResult(pokemon, created)`), `ListLocalPokemonUseCase`, `GetLocalPokemonUseCase`, their services and the `LocalPokemonRepository` port; `PokemonCatalog.findByIdOrName`, implemented in `PokeApiCatalogAdapter` on top of the cached `fetchPokemon` / `fetchSpecies`.
+- Persistence: `LocalPokemonEntity`, `SpringDataLocalPokemonRepository`, `JpaLocalPokemonRepositoryAdapter` (mapping in both directions, `@Version`, ordered abilities with `@OrderColumn`, tags as a set, lazy collections mapped inside the transaction).
+- Web and config: `LocalPokemonController`, `SyncPokemonRequest`, `LocalPokemonResponse` (kg / m like the US01 DTOs, proprietary fields, `version`), `ClockConfig`, three beans in `UseCaseConfig`.
+- Tests: domain, three services, catalogue snapshot (bulbasaur, pikachu, ditto, missing species, 404, 5xx), `@WebMvcTest` for 201/200/400/404/502 and the read endpoints, and `JpaLocalPokemonRepositoryAdapterIT` on PostgreSQL (insert, update, ordering, version increments, stale version, pagination, nulls).
+
+**Review notes:**
+
+- The domain `version` is a nullable `Long`, with `null` meaning "not stored yet". A primitive `long` would make Spring Data treat every record with an assigned id as existing and `merge` a row that is not there; the wrapper keeps persist vs merge unambiguous and mirrors JPA.
+- The idOrName regex and the page/size limits were duplicated in the first draft of the new services. They were moved into `PokemonIdentifier` and `PageQuery` in a separate `refactor` commit before the red step, and US01/US02 now use them too; their old tests still pass unchanged.
+- Re-sync always bumps `version` because `syncedAt` / `updatedAt` change, which is intended: a client holding an older copy must re-read before editing.
+- The sync is a read-then-write without a lock, so two concurrent first syncs of the same Pokémon can hit the primary key and return a 500. Left open on purpose; the effect is a retry.
