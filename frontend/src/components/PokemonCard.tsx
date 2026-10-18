@@ -3,45 +3,29 @@ import { Link, useLocation } from 'react-router-dom'
 import type { PokemonSummary } from '../api/types'
 import { formatName, formatPokemonId, formatWeight } from '../lib/format'
 
-const SPRITES = '/sprites/pokemon/'
-const ARTWORK = '/sprites/pokemon/other/official-artwork/'
-
-/** Some forms list a sprite URL that 404s upstream; the official artwork usually exists for them. */
-function artworkFallback(spriteUrl: string): string | null {
-  return spriteUrl.includes(SPRITES) && !spriteUrl.includes(ARTWORK)
-    ? spriteUrl.replace(SPRITES, ARTWORK)
-    : null
-}
-
 export function PokemonCard({ pokemon }: { pokemon: PokemonSummary }) {
   const name = formatName(pokemon.name)
   const location = useLocation()
-  const [src, setSrc] = useState(pokemon.spriteUrl)
-  const [failed, setFailed] = useState(false)
-
-  function onImageError() {
-    const fallback = src ? artworkFallback(src) : null
-    if (fallback) {
-      setSrc(fallback)
-    } else {
-      setFailed(true)
-    }
-  }
+  // Same picture as the detail page; some forms have a broken artwork or sprite upstream, so each
+  // failed load moves on to the next candidate and the placeholder shows once none is left.
+  const candidates = [pokemon.artworkUrl, pokemon.spriteUrl].filter((url): url is string => !!url)
+  const [failures, setFailures] = useState(0)
+  const src = candidates[failures]
 
   return (
     <article className="card">
       <div className="card__media">
-        {src && !failed ? (
+        {src ? (
           <img
             src={src}
-            onError={onImageError}
-            alt={`Sprite of ${name}`}
+            onError={() => setFailures((count) => count + 1)}
+            alt={`Artwork of ${name}`}
             width={96}
             height={96}
             loading="lazy"
           />
         ) : (
-          <div className="card__no-image" role="img" aria-label={`No sprite available for ${name}`}>
+          <div className="card__no-image" role="img" aria-label={`No image available for ${name}`}>
             ?
           </div>
         )}

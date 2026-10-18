@@ -8,6 +8,7 @@ public record PokemonSummaryResponse(
         int id,
         String name,
         String spriteUrl,
+        String artworkUrl,
         String category,
         double weightKg,
         List<String> abilities) {
@@ -17,6 +18,7 @@ public record PokemonSummaryResponse(
                 summary.id(),
                 summary.name(),
                 summary.spriteUrl(),
+                summary.artworkUrl(),
                 summary.category(),
                 summary.weightKg(),
                 summary.abilities());

@@ -9,31 +9,43 @@ const zygarde = {
   id: 10301,
   name: 'zygarde-mega',
   spriteUrl: SPRITE,
+  artworkUrl: ARTWORK,
   category: null,
   weightKg: 610,
   abilities: [],
 }
 
+const image = () => screen.getByRole('img', { name: 'Artwork of Zygarde Mega' })
+
 describe('PokemonCard', () => {
-  it('falls back to the official artwork when the sprite fails to load', () => {
+  it('shows the official artwork, the same picture as the detail page', () => {
     renderWithProviders(<PokemonCard pokemon={zygarde} />)
 
-    fireEvent.error(screen.getByRole('img', { name: 'Sprite of Zygarde Mega' }))
-
-    expect(screen.getByRole('img', { name: 'Sprite of Zygarde Mega' })).toHaveAttribute(
-      'src',
-      ARTWORK,
-    )
+    expect(image()).toHaveAttribute('src', ARTWORK)
   })
 
-  it('shows the placeholder when the artwork fails too', () => {
+  it('falls back to the pixel sprite when the artwork fails to load', () => {
     renderWithProviders(<PokemonCard pokemon={zygarde} />)
 
-    fireEvent.error(screen.getByRole('img', { name: 'Sprite of Zygarde Mega' }))
-    fireEvent.error(screen.getByRole('img', { name: 'Sprite of Zygarde Mega' }))
+    fireEvent.error(image())
+
+    expect(image()).toHaveAttribute('src', SPRITE)
+  })
+
+  it('uses the sprite when there is no artwork', () => {
+    renderWithProviders(<PokemonCard pokemon={{ ...zygarde, artworkUrl: null }} />)
+
+    expect(image()).toHaveAttribute('src', SPRITE)
+  })
+
+  it('shows the placeholder when nothing loads', () => {
+    renderWithProviders(<PokemonCard pokemon={zygarde} />)
+
+    fireEvent.error(image())
+    fireEvent.error(image())
 
     expect(
-      screen.getByRole('img', { name: 'No sprite available for Zygarde Mega' }),
+      screen.getByRole('img', { name: 'No image available for Zygarde Mega' }),
     ).toBeInTheDocument()
   })
 })

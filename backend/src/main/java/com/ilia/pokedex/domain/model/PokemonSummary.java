@@ -4,7 +4,7 @@ import java.util.List;
 import java.util.Objects;
 
 /**
- * List entry for US01: sprite, category, mass and abilities ("skills").
+ * List entry for US01: sprite, artwork, category, mass and abilities ("skills").
  *
  * @param weightHectograms weight as PokeAPI reports it (1 hg = 0.1 kg)
  */
@@ -12,6 +12,7 @@ public record PokemonSummary(
         int id,
         String name,
         String spriteUrl,
+        String artworkUrl,
         String category,
         int weightHectograms,
         List<String> abilities) {

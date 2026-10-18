@@ -253,7 +253,8 @@ img {
 }
 
 .card__media img {
-  image-rendering: pixelated;
+  max-width: 100%;
+  height: auto;
 }
 
 .card__no-image {
@@ -369,6 +370,23 @@ a.pagination__link:hover {
 .pagination__status {
   padding: 0 8px;
   font-variant-numeric: tabular-nums;
+}
+
+.pagination__jump {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-left: 16px;
+}
+
+.pagination__jump input {
+  width: 6ch;
+  padding: 8px;
+  font: inherit;
+  color: var(--color-text);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: 8px;
 }
 
 /* 8. Error banner ---------------------------------------------------------- */

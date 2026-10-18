@@ -87,7 +87,7 @@ class ListPokemonServiceTest {
     }
 
     private static PokemonSummary pikachu() {
-        return new PokemonSummary(25, "pikachu", "https://img/25.png", "Mouse Pokémon", 60,
+        return new PokemonSummary(25, "pikachu", "https://img/25.png", "https://img/artwork/25.png", "Mouse Pokémon", 60,
                 List.of("static", "lightning-rod"));
     }
 }

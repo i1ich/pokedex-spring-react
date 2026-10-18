@@ -48,7 +48,9 @@ describe('RegisterPage', () => {
     renderRegister()
 
     expect(screen.getByRole('heading', { level: 1, name: /register/i })).toBeInTheDocument()
-    expect(screen.getByLabelText('Username')).toHaveAccessibleDescription(/letters, digits, dots, underscores or hyphens/i)
+    expect(screen.getByLabelText('Username')).toHaveAccessibleDescription(
+      /letters, digits, dots, underscores or hyphens/i,
+    )
     expect(screen.getByLabelText('Password')).toHaveAttribute('autocomplete', 'new-password')
     expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/at least 8/i)
     expect(screen.getByLabelText('Password')).not.toHaveAccessibleDescription(/byte|72/i)

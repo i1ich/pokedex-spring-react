@@ -37,8 +37,8 @@ describe('BrowsePage', () => {
     expect(view.getByText('6 kg')).toBeInTheDocument()
     const abilities = view.getAllByRole('listitem').map((li) => li.textContent)
     expect(abilities).toEqual(['Static', 'Lightning Rod'])
-    const sprite = view.getByRole('img', { name: 'Sprite of Pikachu' })
-    expect(sprite).toHaveAttribute('src', pikachu.spriteUrl)
+    const artwork = view.getByRole('img', { name: 'Artwork of Pikachu' })
+    expect(artwork).toHaveAttribute('src', pikachu.artworkUrl)
 
     expect(screen.getByRole('link', { name: 'Mr Mime' })).toHaveAttribute(
       'href',
@@ -47,12 +47,12 @@ describe('BrowsePage', () => {
     expect(screen.getByText('54.5 kg')).toBeInTheDocument()
   })
 
-  it('does not break when a Pokémon has no sprite', async () => {
-    stubFetch(() => json(pageOf([{ ...pikachu, spriteUrl: null }])))
+  it('does not break when a Pokémon has no image', async () => {
+    stubFetch(() => json(pageOf([{ ...pikachu, spriteUrl: null, artworkUrl: null }])))
 
     renderWithProviders(<BrowsePage />)
 
-    expect(await screen.findByRole('img', { name: /no sprite.*pikachu/i })).toBeInTheDocument()
+    expect(await screen.findByRole('img', { name: /no image.*pikachu/i })).toBeInTheDocument()
   })
 
   it('requests API page 0 (human page 1) by default and shows pagination', async () => {

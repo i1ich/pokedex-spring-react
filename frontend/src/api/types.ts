@@ -13,6 +13,7 @@ export interface PokemonSummary {
   id: number
   name: string
   spriteUrl: string | null
+  artworkUrl: string | null
   category: string | null
   weightKg: number
   abilities: string[]

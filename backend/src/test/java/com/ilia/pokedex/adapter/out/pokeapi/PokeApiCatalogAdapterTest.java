@@ -51,9 +51,9 @@ class PokeApiCatalogAdapterTest {
         server.verify();
         assertThat(slice.totalCount()).isEqualTo(1302);
         assertThat(slice.items()).containsExactly(
-                new PokemonSummary(1, "bulbasaur", "https://img.test/1.png", "Seed Pokémon", 69,
+                new PokemonSummary(1, "bulbasaur", "https://img.test/1.png", "https://img.test/artwork/1.png", "Seed Pokémon", 69,
                         java.util.List.of("overgrow", "chlorophyll")),
-                new PokemonSummary(386, "deoxys-normal", "https://img.test/386.png", "DNA Pokémon", 608,
+                new PokemonSummary(386, "deoxys-normal", "https://img.test/386.png", null, "DNA Pokémon", 608,
                         java.util.List.of("pressure")));
         assertThat(slice.items().get(0).weightKg()).isEqualTo(6.9);
     }

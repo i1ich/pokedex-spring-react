@@ -47,7 +47,7 @@ class PokemonControllerTest {
     @Test
     void returnsAPageOfPokemonSummaries() throws Exception {
         when(listPokemon.list(1, 2)).thenReturn(new PageResult<>(List.of(
-                new PokemonSummary(25, "pikachu", "https://img/25.png", "Mouse Pokémon", 60,
+                new PokemonSummary(25, "pikachu", "https://img/25.png", "https://img/artwork/25.png", "Mouse Pokémon", 60,
                         List.of("static", "lightning-rod"))), 1, 2, 1302));
 
         mvc.perform(get("/api/v1/pokemon").param("page", "1").param("size", "2"))
@@ -56,6 +56,7 @@ class PokemonControllerTest {
                 .andExpect(jsonPath("$.items[0].id").value(25))
                 .andExpect(jsonPath("$.items[0].name").value("pikachu"))
                 .andExpect(jsonPath("$.items[0].spriteUrl").value("https://img/25.png"))
+                .andExpect(jsonPath("$.items[0].artworkUrl").value("https://img/artwork/25.png"))
                 .andExpect(jsonPath("$.items[0].category").value("Mouse Pokémon"))
                 .andExpect(jsonPath("$.items[0].weightKg").value(6.0))
                 .andExpect(jsonPath("$.items[0].abilities", contains("static", "lightning-rod")))

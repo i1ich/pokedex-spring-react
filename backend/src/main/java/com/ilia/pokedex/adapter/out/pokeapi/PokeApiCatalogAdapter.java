@@ -112,6 +112,7 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
                 pokemon.id(),
                 pokemon.name(),
                 spriteOf(pokemon),
+                artworkOf(pokemon),
                 categoryOf(pokemon),
                 pokemon.weight(),
                 abilityNames(pokemon));
