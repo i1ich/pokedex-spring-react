@@ -8,7 +8,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 **Context given before the prompt:** the exercise PDF, and a short discussion that settled the stack (Testcontainers instead of H2, Caffeine for caching, TanStack Query for server state).
 
-**Prompt (translated from Russian):**
+**Prompt:**
 
 > Create the plan and the repository structure for:
 >
@@ -34,7 +34,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 002 — T1 US02 detailed view (subagent)
 
-**Prompt (summarised):** a subagent received the T1 task from `docs/TASKS.md` plus the shared rules: implement `GET /api/v1/pokemon/{idOrName}` (image, stats, English description, evolution chain) with strict TDD (separate `[red]` and `[green]` commits), matching the US01 style and the Clean Architecture rules, with small hand-trimmed PokeAPI fixtures.
+**Prompt:** a subagent received the T1 task from `docs/TASKS.md` plus the shared rules: implement `GET /api/v1/pokemon/{idOrName}` (image, stats, English description, evolution chain) with strict TDD (separate `[red]` and `[green]` commits), matching the US01 style and the Clean Architecture rules, with small hand-trimmed PokeAPI fixtures.
 
 **Output:**
 
@@ -54,7 +54,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 003 — T2 persistence + US03 sync (subagent)
 
-**Prompt (summarised):** a subagent received the T2 task from `docs/TASKS.md` plus the shared rules and orchestrator notes: copy a Pokémon from PokeAPI into `local_pokemon` idempotently (`POST /api/v1/local-pokemon/sync`: 201 + `Location` for a new record, 200 for a re-sync that refreshes the PokeAPI fields and keeps `localName`, `region`, `notes`, `tags`), plus `GET /api/v1/local-pokemon` and `/{id}`. Strict TDD with separate `[red]` and `[green]` commits, JPA `@Version` for T3, a deterministic `Clock`, Testcontainers for the adapter, and no schema change (`V1__init.sql` is fixed). It had to reuse T1's `idOrName` rule instead of copying the regex.
+**Prompt:** a subagent received the T2 task from `docs/TASKS.md` plus the shared rules and orchestrator notes: copy a Pokémon from PokeAPI into `local_pokemon` idempotently (`POST /api/v1/local-pokemon/sync`: 201 + `Location` for a new record, 200 for a re-sync that refreshes the PokeAPI fields and keeps `localName`, `region`, `notes`, `tags`), plus `GET /api/v1/local-pokemon` and `/{id}`. Strict TDD with separate `[red]` and `[green]` commits, JPA `@Version` for T3, a deterministic `Clock`, Testcontainers for the adapter, and no schema change (`V1__init.sql` is fixed). It had to reuse T1's `idOrName` rule instead of copying the regex.
 
 **Output:**
 
@@ -75,7 +75,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 004 — T4 authentication (subagent)
 
-**Prompt (summarised):** a subagent received the T4 task from `docs/TASKS.md` plus the shared rules and orchestrator notes: register / login / me with HS256 JWT and BCrypt, public versus protected routes (`/api/v1/pokemon/**` public, `/api/v1/local-pokemon/**` protected), 401 and 403 as `application/problem+json`, CORS for the two frontend origins, stateless sessions with CSRF off, a seeded `demo` user, and a startup failure for a short secret. Strict TDD with separate `[red]` and `[green]` commits; the credential rules had to live in the framework-free core.
+**Prompt:** a subagent received the T4 task from `docs/TASKS.md` plus the shared rules and orchestrator notes: register / login / me with HS256 JWT and BCrypt, public versus protected routes (`/api/v1/pokemon/**` public, `/api/v1/local-pokemon/**` protected), 401 and 403 as `application/problem+json`, CORS for the two frontend origins, stateless sessions with CSRF off, a seeded `demo` user, and a startup failure for a short secret. Strict TDD with separate `[red]` and `[green]` commits; the credential rules had to live in the framework-free core.
 
 **Output:**
 
@@ -98,7 +98,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 005 — T9 GenAI section (subagents)
 
-**Prompt (summarised):** T9 from `docs/TASKS.md` was run in three phases by separate agents so that the AI output is genuine and the review independent.
+**Prompt:** T9 from `docs/TASKS.md` was run in three phases by separate agents so that the AI output is genuine and the review independent.
 
 1. A subagent wrote only `genai/prompt.md`: a realistic prompt for a task-management REST API (Java 21, Spring Boot 3.5, JPA, PostgreSQL, JWT already provided, Bean Validation) with layering, validation rules, ownership, pagination with a maximum, problem+json errors, status codes, required tests and an output format of complete files plus assumptions. It was explicitly not to be weakened to provoke mistakes.
 2. The orchestrator gave that text, and nothing else, to a fresh Claude Sonnet 5.5 subagent in a single pass; its answer was split into `genai/output/` unedited.
@@ -125,7 +125,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 006 — T6 frontend scaffold (subagent)
 
-**Prompt (summarised):** T6 from `docs/TASKS.md`: a `frontend/` with Vite + React + TypeScript, TanStack Query, React Router, ESLint, Prettier, Vitest + Testing Library. An API client with a base URL from `VITE_API_URL`, JWT handling and problem+json parsing into a typed `ApiError`; DTO types from the backend; an auth context with `ProtectedRoute`; `usePokemonPage` with `keepPreviousData`; a layout and the Browse page with `?page=` in the URL. The orchestrator added constraints that come from backend behaviour: the token must only go on requests that need it (an expired token gets 401 even on public routes), a 401 must sign the user out, an empty `VITE_API_URL` means same-origin, non-JSON error bodies (nginx 502) must not break error handling, and the browser console must stay clean. Commit order was scaffold, then `[red]`, then `[green]`.
+**Prompt:** T6 from `docs/TASKS.md`: a `frontend/` with Vite + React + TypeScript, TanStack Query, React Router, ESLint, Prettier, Vitest + Testing Library. An API client with a base URL from `VITE_API_URL`, JWT handling and problem+json parsing into a typed `ApiError`; DTO types from the backend; an auth context with `ProtectedRoute`; `usePokemonPage` with `keepPreviousData`; a layout and the Browse page with `?page=` in the URL. The orchestrator added constraints that come from backend behaviour: the token must only go on requests that need it (an expired token gets 401 even on public routes), a 401 must sign the user out, an empty `VITE_API_URL` means same-origin, non-JSON error bodies (nginx 502) must not break error handling, and the browser console must stay clean. Commit order was scaffold, then `[red]`, then `[green]`.
 
 **Output:**
 
@@ -144,7 +144,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 007 — T3 US04 local modification (subagent)
 
-**Prompt (summarised):** T3 from `docs/TASKS.md`: `PUT /api/v1/local-pokemon/{id}` (`localName, region, notes, tags[], version`) and `DELETE`, with 400/404/409/401, bean validation for shape and business rules in a framework-free service, and one `*IT` for the stale-version 409. The orchestrator added: reuse T4's `ConflictException`; check the version in the service and also translate `OptimisticLockingFailureException` in the JPA adapter so a 500 is impossible; fix T2's concurrent-first-sync race (`DataIntegrityViolationException` on insert); unknown or read-only body fields are 400 per DTO, not by flipping the global Jackson setting; the 400 must name the offending property.
+**Prompt:** T3 from `docs/TASKS.md`: `PUT /api/v1/local-pokemon/{id}` (`localName, region, notes, tags[], version`) and `DELETE`, with 400/404/409/401, bean validation for shape and business rules in a framework-free service, and one `*IT` for the stale-version 409. The orchestrator added: reuse T4's `ConflictException`; check the version in the service and also translate `OptimisticLockingFailureException` in the JPA adapter so a 500 is impossible; fix T2's concurrent-first-sync race (`DataIntegrityViolationException` on insert); unknown or read-only body fields are 400 per DTO, not by flipping the global Jackson setting; the 400 must name the offending property.
 
 **Output:**
 
@@ -165,7 +165,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 008 — T10 OpenAPI and seed data (subagent)
 
-**Prompt (summarised):** T10 from `docs/TASKS.md`: springdoc OpenAPI with a bearer JWT scheme, `@Operation` and error `@ApiResponse` annotations on the controllers, Swagger UI public; and a demo seeder that pre-syncs Pokemon #1 to #12 into `local_pokemon`, guarded by `app.seed.enabled` (default true, false in tests), idempotent, never calling PokeAPI in tests. The orchestrator added: pick a springdoc 2.8.x that fits Boot 3.5.6; do not create `src/test/resources/application.yml` (it would shadow the main one); startup must not fail or stall when PokeAPI is unreachable; the seeder uses only inbound ports; two red/green cycles (`openapi`, `seed`).
+**Prompt:** T10 from `docs/TASKS.md`: springdoc OpenAPI with a bearer JWT scheme, `@Operation` and error `@ApiResponse` annotations on the controllers, Swagger UI public; and a demo seeder that pre-syncs Pokemon #1 to #12 into `local_pokemon`, guarded by `app.seed.enabled` (default true, false in tests), idempotent, never calling PokeAPI in tests. The orchestrator added: pick a springdoc 2.8.x that fits Boot 3.5.6; do not create `src/test/resources/application.yml` (it would shadow the main one); startup must not fail or stall when PokeAPI is unreachable; the seeder uses only inbound ports; two red/green cycles (`openapi`, `seed`).
 
 **Output:**
 
@@ -185,7 +185,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 009 — T7 frontend pages (subagent)
 
-**Prompt (summarised):** T7 from `docs/TASKS.md`: replace the placeholder pages of T6 with the detail page (artwork, types, stat bars, description, evolution tree, "Add to my collection"), login and register forms, the protected collection list (paginated, delete with confirmation) and the edit form (`localName`, `region`, `notes`, tag chips, `version`, 409 handling). The orchestrator added: the backend contract (evolution chain is a tree, PUT body is exactly five properties, 201 vs 200 on sync), client-side rules mirroring the server, TDD with `[red]`/`[green]` commits per cycle, no console warnings (the test setup fails on any `console.error/warn`), and an optional smoke test against a real backend.
+**Prompt:** T7 from `docs/TASKS.md`: replace the placeholder pages of T6 with the detail page (artwork, types, stat bars, description, evolution tree, "Add to my collection"), login and register forms, the protected collection list (paginated, delete with confirmation) and the edit form (`localName`, `region`, `notes`, tag chips, `version`, 409 handling). The orchestrator added: the backend contract (evolution chain is a tree, PUT body is exactly five properties, 201 vs 200 on sync), client-side rules mirroring the server, TDD with `[red]`/`[green]` commits per cycle, no console warnings (the test setup fails on any `console.error/warn`), and an optional smoke test against a real backend.
 
 **Output:**
 
@@ -203,7 +203,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 010 — T5 Cucumber acceptance tests (subagent)
 
-**Prompt (summarised):** T5 from `docs/TASKS.md`: executable specification, one feature file per user story (`us01_enumeration` to `us04_local_modification`) on Cucumber with Spring, RestAssured for the requests, WireMock as PokeAPI and Testcontainers PostgreSQL, run by `mvn verify` through a runner ending in `IT`. The orchestrator added: reuse the existing JSON fixtures, clear the Caffeine caches and reset WireMock in a `@Before`, clean `local_pokemon` between scenarios, make sure Surefire does not also run the features, Scenario Outlines for the 400 rules, a commit for the infrastructure and a second for the scenarios, and report (not silently weaken) anything that fails.
+**Prompt:** T5 from `docs/TASKS.md`: executable specification, one feature file per user story (`us01_enumeration` to `us04_local_modification`) on Cucumber with Spring, RestAssured for the requests, WireMock as PokeAPI and Testcontainers PostgreSQL, run by `mvn verify` through a runner ending in `IT`. The orchestrator added: reuse the existing JSON fixtures, clear the Caffeine caches and reset WireMock in a `@Before`, clean `local_pokemon` between scenarios, make sure Surefire does not also run the features, Scenario Outlines for the 400 rules, a commit for the infrastructure and a second for the scenarios, and report (not silently weaken) anything that fails.
 
 **Output:**
 
@@ -221,7 +221,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 011 — T8 Docker Compose (subagent)
 
-**Prompt (summarised):** T8 from `docs/TASKS.md`: a frontend image (multi-stage Node build, nginx with SPA fallback and `/api` proxied to the backend so the browser is same-origin), and a compose file with `db`, `backend`, `frontend` (port 3000), health checks and `depends_on: condition: service_healthy`. The orchestrator added: build with an empty `VITE_API_URL`, a dev-only `JWT_SECRET` default plus `.env.example`, configurable host ports, a CSP that lets PokeAPI sprites load, and a check from a clean clone under a separate project name, without ever touching the existing `pgdata` volume.
+**Prompt:** T8 from `docs/TASKS.md`: a frontend image (multi-stage Node build, nginx with SPA fallback and `/api` proxied to the backend so the browser is same-origin), and a compose file with `db`, `backend`, `frontend` (port 3000), health checks and `depends_on: condition: service_healthy`. The orchestrator added: build with an empty `VITE_API_URL`, a dev-only `JWT_SECRET` default plus `.env.example`, configurable host ports, a CSP that lets PokeAPI sprites load, and a check from a clean clone under a separate project name, without ever touching the existing `pgdata` volume.
 
 **Output:**
 
@@ -238,7 +238,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 012 — Orchestration of T1–T11 (Claude Code, Opus as orchestrator)
 
-**Prompt (summarised):** after the plan and the skeleton (entry 001), the owner asked an Opus session to complete every task in `docs/TASKS.md` by delegating each one to its own Sonnet subagent, strictly one after another in the order **T1 → T2 → T4 → T9 → T6 → T3 → T10 → T7 → T5 → T8 → T11**. Each subagent gets the "Rules for every agent" block, its task text verbatim and the TDD commit instructions (`[red]`, `[green]`, `refactor`). The orchestrator reviews the commits of each task for: framework-free `domain` and `application`, controllers on `port.in` interfaces only, services wired in `UseCaseConfig`, RFC 7807 errors, tests written first (visible in the commit order), no symlinks, no secrets, no unrelated rewrites of shared files. A task that is wrong goes back with concrete fixes. After each task the orchestrator runs `mvnw verify` (and the frontend build, lint and tests when the frontend changed) on `main`; after two failed fix rounds the task is reverted with `git revert`. Nothing is pushed. Done means: every task committed, everything green, the compose stack works in the browser with the demo login, the `genai/` section complete, README and presentation final, the AI log complete.
+**Prompt:** after the plan and the skeleton (entry 001), the owner asked an Opus session to complete every task in `docs/TASKS.md` by delegating each one to its own Sonnet subagent, strictly one after another in the order **T1 → T2 → T4 → T9 → T6 → T3 → T10 → T7 → T5 → T8 → T11**. Each subagent gets the "Rules for every agent" block, its task text verbatim and the TDD commit instructions (`[red]`, `[green]`, `refactor`). The orchestrator reviews the commits of each task for: framework-free `domain` and `application`, controllers on `port.in` interfaces only, services wired in `UseCaseConfig`, RFC 7807 errors, tests written first (visible in the commit order), no symlinks, no secrets, no unrelated rewrites of shared files. A task that is wrong goes back with concrete fixes. After each task the orchestrator runs `mvnw verify` (and the frontend build, lint and tests when the frontend changed) on `main`; after two failed fix rounds the task is reverted with `git revert`. Nothing is pushed. Done means: every task committed, everything green, the compose stack works in the browser with the demo login, the `genai/` section complete, README and presentation final, the AI log complete.
 
 **What the orchestrator did beyond relaying the prompts:**
 
@@ -258,7 +258,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 013 — T11 README and presentation (subagent)
 
-**Prompt (summarised):** T11 from `docs/TASKS.md`: `README.md` (overview, features per story, stack, architecture diagram, run instructions for Docker and for local backend and frontend, demo credentials, API table, testing and coverage, caching, error format, decisions and trade-offs, next steps, links to `genai/` and the AI log), `docs/PRESENTATION.md` (problem, stories to endpoints, decisions and alternatives, TDD walkthrough with commit references, AI usage and checks, a 5-minute demo script, limitations) and `docs/architecture.md` (Mermaid). The orchestrator added: every claim must be verifiable in the repository (read the code, the plan, all log entries, compose and `.env.example`, `git log` for real hashes); do not invent numbers; for coverage either report test counts only, or add JaCoCo (add-only, no thresholds, separate commit) and a frontend coverage provider if it works cleanly; state the known limitations honestly; append entries 012 and 013.
+**Prompt:** T11 from `docs/TASKS.md`: `README.md` (overview, features per story, stack, architecture diagram, run instructions for Docker and for local backend and frontend, demo credentials, API table, testing and coverage, caching, error format, decisions and trade-offs, next steps, links to `genai/` and the AI log), `docs/PRESENTATION.md` (problem, stories to endpoints, decisions and alternatives, TDD walkthrough with commit references, AI usage and checks, a 5-minute demo script, limitations) and `docs/architecture.md` (Mermaid). The orchestrator added: every claim must be verifiable in the repository (read the code, the plan, all log entries, compose and `.env.example`, `git log` for real hashes); do not invent numbers; for coverage either report test counts only, or add JaCoCo (add-only, no thresholds, separate commit) and a frontend coverage provider if it works cleanly; state the known limitations honestly; append entries 012 and 013.
 
 **Output:**
 
@@ -278,7 +278,7 @@ Chronological log of the prompts used to build this project with Claude (agentic
 
 ## 014 — Polishing after T11 from real use (interactive Claude Code session, Sat 17 – Sun 18 Oct 2026)
 
-**Prompt (summarised):** after T11 the owner clicked through the running Docker stack as a visitor and asked for one change at a time, interactively, instead of through a task file and a subagent. The requests were short and are summarised here from the commits, not quoted: stop an unchanged re-sync from making an open edit form stale; friendlier register hints and the demo login on the login page; fix 404s when clicking some species in an evolution tree; show the Pokémon being viewed when it is a form such as `pikachu-gmax`; never show a blank card when a picture is missing; let "Back to Browse" return to the same page; a way to jump to a page; search by name; make clear that the collection is shared; then two look-and-feel experiments.
+**Prompt:** after T11 the owner clicked through the running Docker stack as a visitor and asked for one change at a time, interactively, instead of through a task file and a subagent. The requests were short and are summarised here from the commits, not quoted: stop an unchanged re-sync from making an open edit form stale; friendlier register hints and the demo login on the login page; fix 404s when clicking some species in an evolution tree; show the Pokémon being viewed when it is a form such as `pikachu-gmax`; never show a blank card when a picture is missing; let "Back to Browse" return to the same page; a way to jump to a page; search by name; make clear that the collection is shared; then two look-and-feel experiments.
 
 **Output (commits, all co-authored by Claude Sonnet 5.5):**
 
