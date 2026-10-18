@@ -6,9 +6,9 @@ import { formatName, formatPokemonId, formatWeight } from '../lib/format'
 export function PokemonCard({ pokemon }: { pokemon: PokemonSummary }) {
   const name = formatName(pokemon.name)
   const location = useLocation()
-  // Same picture as the detail page; some forms have a broken artwork or sprite upstream, so each
-  // failed load moves on to the next candidate and the placeholder shows once none is left.
-  const candidates = [pokemon.artworkUrl, pokemon.spriteUrl].filter((url): url is string => !!url)
+  // The sprite is what the user story asks for; some forms have no sprite (or a broken one) upstream,
+  // so each failed load moves on to the official artwork and the placeholder shows once none is left.
+  const candidates = [pokemon.spriteUrl, pokemon.artworkUrl].filter((url): url is string => !!url)
   const [failures, setFailures] = useState(0)
   const src = candidates[failures]
 
@@ -19,7 +19,7 @@ export function PokemonCard({ pokemon }: { pokemon: PokemonSummary }) {
           <img
             src={src}
             onError={() => setFailures((count) => count + 1)}
-            alt={`Artwork of ${name}`}
+            alt={`Sprite of ${name}`}
             width={96}
             height={96}
             loading="lazy"

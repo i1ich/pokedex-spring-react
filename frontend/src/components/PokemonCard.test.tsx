@@ -15,27 +15,27 @@ const zygarde = {
   abilities: [],
 }
 
-const image = () => screen.getByRole('img', { name: 'Artwork of Zygarde Mega' })
+const image = () => screen.getByRole('img', { name: 'Sprite of Zygarde Mega' })
 
 describe('PokemonCard', () => {
-  it('shows the official artwork, the same picture as the detail page', () => {
+  it('shows the sprite, as the user story asks', () => {
     renderWithProviders(<PokemonCard pokemon={zygarde} />)
 
-    expect(image()).toHaveAttribute('src', ARTWORK)
+    expect(image()).toHaveAttribute('src', SPRITE)
   })
 
-  it('falls back to the pixel sprite when the artwork fails to load', () => {
+  it('falls back to the official artwork when the sprite fails to load', () => {
     renderWithProviders(<PokemonCard pokemon={zygarde} />)
 
     fireEvent.error(image())
 
-    expect(image()).toHaveAttribute('src', SPRITE)
+    expect(image()).toHaveAttribute('src', ARTWORK)
   })
 
-  it('uses the sprite when there is no artwork', () => {
-    renderWithProviders(<PokemonCard pokemon={{ ...zygarde, artworkUrl: null }} />)
+  it('uses the artwork when there is no sprite', () => {
+    renderWithProviders(<PokemonCard pokemon={{ ...zygarde, spriteUrl: null }} />)
 
-    expect(image()).toHaveAttribute('src', SPRITE)
+    expect(image()).toHaveAttribute('src', ARTWORK)
   })
 
   it('shows the placeholder when nothing loads', () => {
