@@ -1,16 +1,40 @@
-import { Link } from 'react-router-dom'
+import { useState } from 'react'
+import { Link, useLocation } from 'react-router-dom'
 import type { PokemonSummary } from '../api/types'
 import { formatName, formatPokemonId, formatWeight } from '../lib/format'
 
+const SPRITES = '/sprites/pokemon/'
+const ARTWORK = '/sprites/pokemon/other/official-artwork/'
+
+/** Some forms list a sprite URL that 404s upstream; the official artwork usually exists for them. */
+function artworkFallback(spriteUrl: string): string | null {
+  return spriteUrl.includes(SPRITES) && !spriteUrl.includes(ARTWORK)
+    ? spriteUrl.replace(SPRITES, ARTWORK)
+    : null
+}
+
 export function PokemonCard({ pokemon }: { pokemon: PokemonSummary }) {
   const name = formatName(pokemon.name)
+  const location = useLocation()
+  const [src, setSrc] = useState(pokemon.spriteUrl)
+  const [failed, setFailed] = useState(false)
+
+  function onImageError() {
+    const fallback = src ? artworkFallback(src) : null
+    if (fallback) {
+      setSrc(fallback)
+    } else {
+      setFailed(true)
+    }
+  }
 
   return (
     <article className="card">
       <div className="card__media">
-        {pokemon.spriteUrl ? (
+        {src && !failed ? (
           <img
-            src={pokemon.spriteUrl}
+            src={src}
+            onError={onImageError}
             alt={`Sprite of ${name}`}
             width={96}
             height={96}
@@ -24,7 +48,11 @@ export function PokemonCard({ pokemon }: { pokemon: PokemonSummary }) {
       </div>
       <p className="card__id">{formatPokemonId(pokemon.id)}</p>
       <h2 className="card__name">
-        <Link className="card__link" to={`/pokemon/${encodeURIComponent(pokemon.name)}`}>
+        <Link
+          className="card__link"
+          to={`/pokemon/${encodeURIComponent(pokemon.name)}`}
+          state={{ browseSearch: location.search }}
+        >
           {name}
         </Link>
       </h2>

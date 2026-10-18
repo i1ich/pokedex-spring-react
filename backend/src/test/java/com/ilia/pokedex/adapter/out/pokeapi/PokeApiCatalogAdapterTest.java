@@ -186,9 +186,29 @@ class PokeApiCatalogAdapterTest {
     @Test
     void reportsUnknownPokemonAsNotFound() {
         server.expect(requestTo(BASE_URL + "/pokemon/missingno")).andRespond(withStatus(HttpStatus.NOT_FOUND));
+        server.expect(requestTo(BASE_URL + "/pokemon-species/missingno")).andRespond(withStatus(HttpStatus.NOT_FOUND));
 
         assertThatThrownBy(() -> adapter.findDetails("missingno"))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void resolvesASpeciesNameToItsDefaultVarietyWhenThereIsNoPokemonOfThatName() {
+        server.expect(requestTo(BASE_URL + "/pokemon/mouse")).andRespond(withStatus(HttpStatus.NOT_FOUND));
+        server.expect(requestTo(BASE_URL + "/pokemon-species/mouse")).andRespond(withSuccess("""
+                {"id":25,"name":"mouse","genera":[],"flavor_text_entries":[],
+                 "varieties":[{"is_default":false,"pokemon":{"name":"mouse-other","url":"https://pokeapi.test/api/v2/pokemon/10080/"}},
+                              {"is_default":true,"pokemon":{"name":"pikachu","url":"https://pokeapi.test/api/v2/pokemon/25/"}}]}
+                """, MediaType.APPLICATION_JSON));
+        expectJson("/pokemon/pikachu", "pokemon-pikachu");
+        expectJson("/pokemon-species/25", "species-25");
+        expectJson("/evolution-chain/10", "evolution-chain-10");
+
+        PokemonDetails details = adapter.findDetails("mouse");
+
+        server.verify();
+        assertThat(details.name()).isEqualTo("pikachu");
+        assertThat(details.speciesName()).isEqualTo("pikachu");
     }
 
     @Test
@@ -250,6 +270,7 @@ class PokeApiCatalogAdapterTest {
     @Test
     void reportsAnUnknownPokemonAsNotFoundWhenBuildingTheSnapshot() {
         server.expect(requestTo(BASE_URL + "/pokemon/missingno")).andRespond(withStatus(HttpStatus.NOT_FOUND));
+        server.expect(requestTo(BASE_URL + "/pokemon-species/missingno")).andRespond(withStatus(HttpStatus.NOT_FOUND));
 
         assertThatThrownBy(() -> adapter.findByIdOrName("missingno"))
                 .isInstanceOf(ResourceNotFoundException.class);

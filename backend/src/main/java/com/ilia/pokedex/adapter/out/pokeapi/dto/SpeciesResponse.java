@@ -10,7 +10,11 @@ public record SpeciesResponse(
         String name,
         List<Genus> genera,
         @JsonProperty("flavor_text_entries") List<FlavorText> flavorTextEntries,
-        @JsonProperty("evolution_chain") NamedApiResource evolutionChain) {
+        @JsonProperty("evolution_chain") NamedApiResource evolutionChain,
+        List<Variety> varieties) {
+
+    public record Variety(@JsonProperty("is_default") boolean isDefault, NamedApiResource pokemon) {
+    }
 
     public record Genus(String genus, NamedApiResource language) {
     }

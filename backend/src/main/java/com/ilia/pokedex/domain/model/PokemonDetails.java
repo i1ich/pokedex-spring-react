@@ -10,6 +10,7 @@ import java.util.Objects;
  * @param weightHectograms weight as PokeAPI reports it (1 hg = 0.1 kg)
  * @param description      English Pokédex entry with normalised whitespace; {@code null} when unavailable
  * @param evolutionChain   root (base species) of the evolution tree; never {@code null}
+ * @param speciesName      species this form belongs to, e.g. "pikachu" for "pikachu-gmax"
  */
 public record PokemonDetails(
         int id,
@@ -20,7 +21,8 @@ public record PokemonDetails(
         List<String> types,
         List<Stat> stats,
         String description,
-        EvolutionNode evolutionChain) {
+        EvolutionNode evolutionChain,
+        String speciesName) {
 
     public PokemonDetails {
         Objects.requireNonNull(name, "name");

@@ -177,6 +177,7 @@ class PokemonControllerTest {
                 "Unstable genetic makeup.",
                 new PokemonDetails.EvolutionNode(133, "eevee", null, null, List.of(
                         new PokemonDetails.EvolutionNode(134, "vaporeon", null, "use-item", List.of()),
-                        new PokemonDetails.EvolutionNode(197, "umbreon", null, "level-up", List.of()))));
+                        new PokemonDetails.EvolutionNode(197, "umbreon", null, "level-up", List.of()))),
+                "eevee");
     }
 }

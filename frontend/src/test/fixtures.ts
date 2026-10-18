@@ -91,6 +91,7 @@ export const pikachuDetails: PokemonDetails = {
       'level-up',
     ),
   ]),
+  speciesName: 'pikachu',
 }
 
 /** Eevee branches into several evolutions: the chain is a tree, not a line. */
@@ -108,6 +109,7 @@ export const eeveeDetails: PokemonDetails = {
     evolutionNode(135, 'jolteon', [], null, 'use-item'),
     evolutionNode(136, 'flareon', [], 16, 'level-up'),
   ]),
+  speciesName: 'eevee',
 }
 
 export function localPokemon(overrides: Partial<LocalPokemon> = {}): LocalPokemon {

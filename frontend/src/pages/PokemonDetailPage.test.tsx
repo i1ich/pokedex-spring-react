@@ -14,14 +14,14 @@ function LoginProbe() {
   return <p>login page, back to {from?.pathname}</p>
 }
 
-function renderDetail(route = '/pokemon/pikachu', queryClient?: QueryClient) {
+function renderDetail(route = '/pokemon/pikachu', queryClient?: QueryClient, state?: unknown) {
   return renderWithProviders(
     <Routes>
       <Route path="/pokemon/:idOrName" element={<PokemonDetailPage />} />
       <Route path="/login" element={<LoginProbe />} />
       <Route path="/" element={<p>browse page</p>} />
     </Routes>,
-    { route, queryClient },
+    { route: state === undefined ? route : { pathname: route, state }, queryClient },
   )
 }
 
@@ -132,6 +132,25 @@ describe('PokemonDetailPage: content', () => {
       )
     }
     expect(within(chain).getByText('Level 16')).toBeInTheDocument()
+  })
+
+  it('shows the viewed form inside its species chain', async () => {
+    stubFetch(() => json({ ...pikachuDetails, name: 'pikachu-gmax', speciesName: 'pikachu' }))
+
+    const view = renderDetail('/pokemon/pikachu-gmax')
+
+    const current = await view.findByText('Pikachu Gmax', { selector: '.evolution__current' })
+    expect(current).toHaveAttribute('aria-current', 'page')
+    expect(view.getByRole('link', { name: 'Pichu' })).toBeInTheDocument()
+  })
+
+  it('goes back to the catalogue page the user came from', async () => {
+    stubFetch(() => json(pikachuDetails))
+
+    const view = renderDetail('/pokemon/pikachu', undefined, { browseSearch: '?page=7' })
+
+    const back = await view.findByRole('link', { name: 'Back to Browse' })
+    expect(back).toHaveAttribute('href', '/?page=7')
   })
 
   it('says so when the Pokémon does not evolve', async () => {

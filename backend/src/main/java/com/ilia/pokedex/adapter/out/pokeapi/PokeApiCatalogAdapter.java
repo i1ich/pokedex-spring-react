@@ -55,7 +55,7 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
 
     @Override
     public PokemonDetails findDetails(String idOrName) {
-        PokemonResponse pokemon = client.fetchPokemon(idOrName);
+        PokemonResponse pokemon = fetchPokemonOrDefaultVariety(idOrName);
         SpeciesResponse species = pokemon.species() == null ? null : speciesOrNull(pokemon.species());
         return new PokemonDetails(
                 pokemon.id(),
@@ -66,12 +66,13 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
                 typeNames(pokemon),
                 statsOf(pokemon),
                 species == null ? null : descriptionOf(species),
-                evolutionOf(pokemon, species));
+                evolutionOf(pokemon, species),
+                pokemon.species() == null ? pokemon.name() : pokemon.species().name());
     }
 
     @Override
     public PokemonSnapshot findByIdOrName(String idOrName) {
-        PokemonResponse pokemon = client.fetchPokemon(idOrName);
+        PokemonResponse pokemon = fetchPokemonOrDefaultVariety(idOrName);
         return new PokemonSnapshot(
                 pokemon.id(),
                 pokemon.name(),
@@ -81,6 +82,28 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
                 spriteOf(pokemon),
                 artworkOf(pokemon),
                 abilityNames(pokemon));
+    }
+
+    /**
+     * Evolution chains link species names ("maushold"), but {@code /pokemon/{name}} only knows form names
+     * ("maushold-family-of-four"). A miss is retried through the species' default variety.
+     */
+    private PokemonResponse fetchPokemonOrDefaultVariety(String idOrName) {
+        try {
+            return client.fetchPokemon(idOrName);
+        } catch (ResourceNotFoundException notAPokemon) {
+            SpeciesResponse species;
+            try {
+                species = client.fetchSpecies(idOrName);
+            } catch (ResourceNotFoundException notASpecies) {
+                throw notAPokemon;
+            }
+            return (species.varieties() == null ? List.<SpeciesResponse.Variety>of() : species.varieties()).stream()
+                    .filter(SpeciesResponse.Variety::isDefault)
+                    .findFirst()
+                    .map(v -> client.fetchPokemon(v.pokemon().name()))
+                    .orElseThrow(() -> notAPokemon);
+        }
     }
 
     private PokemonSummary toSummary(String name) {

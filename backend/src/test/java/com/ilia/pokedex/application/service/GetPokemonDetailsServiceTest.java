@@ -102,6 +102,7 @@ class GetPokemonDetailsServiceTest {
                 List.of(new Stat("hp", 35), new Stat("speed", 90)),
                 "Electricity could build and cause lightning storms.",
                 new EvolutionNode(172, "pichu", null, null, List.of(
-                        new EvolutionNode(25, "pikachu", null, "level-up", List.of()))));
+                        new EvolutionNode(25, "pikachu", null, "level-up", List.of()))),
+                "pikachu");
     }
 }

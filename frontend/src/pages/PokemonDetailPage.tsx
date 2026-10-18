@@ -8,8 +8,11 @@ import { usePokemonDetail } from '../hooks/usePokemonDetail'
 import { useSyncPokemon } from '../hooks/useSyncPokemon'
 import { formatHeight, formatName, formatPokemonId, formatWeight } from '../lib/format'
 
+/** Returns to the catalogue page the user came from (the card passes its query string along). */
 function BrowseLink() {
-  return <Link to="/">Back to Browse</Link>
+  const { state } = useLocation()
+  const search = typeof state?.browseSearch === 'string' ? state.browseSearch : ''
+  return <Link to={{ pathname: '/', search }}>Back to Browse</Link>
 }
 
 export function PokemonDetailPage() {
@@ -135,7 +138,7 @@ export function PokemonDetailPage() {
 
       <section aria-labelledby="evolution-heading">
         <h2 id="evolution-heading">Evolution</h2>
-        <EvolutionTree root={data.evolutionChain} current={data.name} />
+        <EvolutionTree root={data.evolutionChain} current={data.speciesName} form={data.name} />
       </section>
     </article>
   )

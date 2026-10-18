@@ -14,7 +14,8 @@ public record PokemonDetailsResponse(
         List<String> types,
         List<StatResponse> stats,
         String description,
-        EvolutionNodeResponse evolutionChain) {
+        EvolutionNodeResponse evolutionChain,
+        String speciesName) {
 
     public static PokemonDetailsResponse from(PokemonDetails details) {
         return new PokemonDetailsResponse(
@@ -26,7 +27,8 @@ public record PokemonDetailsResponse(
                 details.types(),
                 details.stats().stream().map(StatResponse::from).toList(),
                 details.description(),
-                EvolutionNodeResponse.from(details.evolutionChain()));
+                EvolutionNodeResponse.from(details.evolutionChain()),
+                details.speciesName());
     }
 
     public record StatResponse(String name, int baseStat) {

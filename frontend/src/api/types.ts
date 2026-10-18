@@ -41,6 +41,8 @@ export interface PokemonDetails {
   stats: PokemonStat[]
   description: string | null
   evolutionChain: EvolutionNode
+  /** Species this form belongs to, e.g. "pikachu" for "pikachu-gmax". */
+  speciesName: string
 }
 
 export interface LocalPokemon {
