@@ -38,7 +38,7 @@ export function validatePassword(raw: string): string | null {
   if (raw === '') return 'Password is required.'
   if (raw.length < PASSWORD_MIN) return `Password must be at least ${PASSWORD_MIN} characters.`
   if (new TextEncoder().encode(raw).length > PASSWORD_MAX_BYTES) {
-    return `Password must be at most ${PASSWORD_MAX_BYTES} bytes (accented and non-Latin characters take more than one).`
+    return 'Password is too long. Please choose a shorter one.'
   }
   return null
 }

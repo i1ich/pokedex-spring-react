@@ -47,6 +47,12 @@ describe('LoginPage', () => {
     expect(screen.getByRole('link', { name: /register/i })).toHaveAttribute('href', '/register')
   })
 
+  it('tells a reviewer which demo account to use', () => {
+    renderLogin()
+
+    expect(screen.getByText('Demo: demo / demo12345')).toBeInTheDocument()
+  })
+
   it('passes the return-to state on to the register page', async () => {
     renderLogin({
       route: { pathname: '/login', state: { from: { pathname: '/pokemon/pikachu' } } },

@@ -56,6 +56,17 @@ public record LocalPokemon(
                 now, now, null);
     }
 
+    /** Whether a re-sync of {@code snapshot} would change nothing but the timestamps. */
+    public boolean hasSameCatalogDataAs(PokemonSnapshot snapshot) {
+        return name.equals(snapshot.name())
+                && Objects.equals(category, snapshot.category())
+                && weightHectograms == snapshot.weightHectograms()
+                && heightDecimetres == snapshot.heightDecimetres()
+                && Objects.equals(spriteUrl, snapshot.spriteUrl())
+                && Objects.equals(artworkUrl, snapshot.artworkUrl())
+                && abilities.equals(snapshot.abilities());
+    }
+
     /** Re-sync: overwrites every PokeAPI field, keeps the proprietary fields and the version. */
     public LocalPokemon resyncedWith(PokemonSnapshot snapshot, Instant now) {
         return new LocalPokemon(

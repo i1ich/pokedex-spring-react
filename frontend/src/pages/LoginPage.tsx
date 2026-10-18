@@ -25,6 +25,8 @@ export function LoginPage() {
       submit={login}
       footer={
         <>
+          <span className="form-page__demo">Demo: demo / demo12345</span>
+          <br />
           No account yet?{' '}
           <Link to="/register" state={location.state}>
             Register

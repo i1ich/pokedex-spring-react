@@ -104,6 +104,21 @@ class SyncPokemonServiceTest {
         assertThat(saved.version()).isEqualTo(2L);
     }
 
+    @Test
+    void doesNotWriteWhenTheCatalogueDataIsUnchangedSoTheVersionStaysStable() {
+        LocalPokemon stored = new LocalPokemon(25, "pikachu", "Mouse Pokémon", 60, 4, "https://img/25.png",
+                "https://img/artwork/25.png", List.of("static", "lightning-rod"), "Sparky", "Kanto", null,
+                List.of("fav"), EARLIER, EARLIER, 2L);
+        when(catalog.findByIdOrName("25")).thenReturn(pikachu());
+        when(repository.findById(25)).thenReturn(Optional.of(stored));
+
+        SyncResult result = service.sync("25");
+
+        assertThat(result.created()).isFalse();
+        assertThat(result.pokemon()).isEqualTo(stored);
+        verify(repository, never()).save(any(LocalPokemon.class));
+    }
+
     @ParameterizedTest
     @NullAndEmptySource
     @ValueSource(strings = {" ", "Pikachu", "pika chu", "../etc", "pikachu!"})

@@ -16,8 +16,8 @@ export function RegisterPage() {
       heading="Register"
       submitLabel="Create account"
       pendingLabel="Creating account…"
-      usernameHint="3–50 characters: letters, digits, dots, underscores or hyphens. Case is ignored."
-      passwordHint="At least 8 characters, and at most 72 bytes."
+      usernameHint="Letters, digits, dots, underscores or hyphens. Case is ignored."
+      passwordHint="At least 8 characters."
       passwordAutoComplete="new-password"
       validateUsername={validateUsername}
       validatePassword={validatePassword}

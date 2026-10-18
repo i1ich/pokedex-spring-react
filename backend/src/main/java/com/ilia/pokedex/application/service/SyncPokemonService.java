@@ -32,6 +32,11 @@ public class SyncPokemonService implements SyncPokemonUseCase {
         Instant now = clock.instant();
         Optional<LocalPokemon> existing = repository.findById(snapshot.id());
 
+        if (existing.isPresent() && existing.get().hasSameCatalogDataAs(snapshot)) {
+            // nothing to copy: writing would only bump the version and make an open edit form stale (409)
+            return new SyncResult(existing.get(), false);
+        }
+
         LocalPokemon toStore = existing
                 .map(stored -> stored.resyncedWith(snapshot, now))
                 .orElseGet(() -> LocalPokemon.firstSync(snapshot, now));

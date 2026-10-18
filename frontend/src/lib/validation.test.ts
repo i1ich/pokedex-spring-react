@@ -50,14 +50,16 @@ describe('password rules', () => {
     expect(validatePassword('       a')).toBeNull()
   })
 
-  it('allows at most 72 UTF-8 bytes (BCrypt limit)', () => {
+  it('rejects a too long password without mentioning bytes or numbers', () => {
     expect(validatePassword('a'.repeat(72))).toBeNull()
-    expect(validatePassword('a'.repeat(73))).toMatch(/72 bytes/i)
+    const message = validatePassword('a'.repeat(73))
+    expect(message).toMatch(/too long/i)
+    expect(message).not.toMatch(/byte|\d/i)
   })
 
-  it('counts bytes, not characters', () => {
+  it('still enforces the BCrypt limit in UTF-8 bytes under the hood', () => {
     expect(validatePassword('é'.repeat(36))).toBeNull() // 72 bytes
-    expect(validatePassword('é'.repeat(37))).toMatch(/72 bytes/i) // 74 bytes
+    expect(validatePassword('é'.repeat(37))).toMatch(/too long/i) // 74 bytes
   })
 })
 

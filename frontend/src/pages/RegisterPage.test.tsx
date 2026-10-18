@@ -48,9 +48,11 @@ describe('RegisterPage', () => {
     renderRegister()
 
     expect(screen.getByRole('heading', { level: 1, name: /register/i })).toBeInTheDocument()
-    expect(screen.getByLabelText('Username')).toHaveAccessibleDescription(/3.50 characters/i)
+    expect(screen.getByLabelText('Username')).toHaveAccessibleDescription(/letters, digits, dots, underscores or hyphens/i)
     expect(screen.getByLabelText('Password')).toHaveAttribute('autocomplete', 'new-password')
     expect(screen.getByLabelText('Password')).toHaveAccessibleDescription(/at least 8/i)
+    expect(screen.getByLabelText('Password')).not.toHaveAccessibleDescription(/byte|72/i)
+    expect(screen.getByLabelText('Username')).not.toHaveAccessibleDescription(/\d/)
     expect(screen.getByRole('link', { name: /log in/i })).toHaveAttribute('href', '/login')
   })
 
@@ -77,8 +79,8 @@ describe('RegisterPage', () => {
   it.each([
     ['', /password is required/i],
     ['1234567', /at least 8 characters/i],
-    ['a'.repeat(73), /at most 72 bytes/i],
-    ['é'.repeat(37), /at most 72 bytes/i],
+    ['a'.repeat(73), /too long/i],
+    ['é'.repeat(37), /too long/i],
   ])('rejects password %j before calling the server', async (password, message) => {
     const fetchMock = backendAccepts()
     renderRegister()
