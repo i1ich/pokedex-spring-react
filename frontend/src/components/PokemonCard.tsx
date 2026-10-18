@@ -2,7 +2,6 @@ import { useState } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 import type { PokemonSummary } from '../api/types'
 import { formatName, formatPokemonId, formatWeight } from '../lib/format'
-import { NoImage } from './NoImage'
 
 export function PokemonCard({ pokemon }: { pokemon: PokemonSummary }) {
   const name = formatName(pokemon.name)
@@ -26,7 +25,9 @@ export function PokemonCard({ pokemon }: { pokemon: PokemonSummary }) {
             loading="lazy"
           />
         ) : (
-          <NoImage label={`No image available for ${name}`} />
+          <div className="card__no-image" role="img" aria-label={`No image available for ${name}`}>
+            ?
+          </div>
         )}
       </div>
       <p className="card__id">{formatPokemonId(pokemon.id)}</p>

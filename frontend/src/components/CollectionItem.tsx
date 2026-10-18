@@ -1,7 +1,6 @@
 import { Link } from 'react-router-dom'
 import type { LocalPokemon } from '../api/types'
 import { formatName, formatPokemonId } from '../lib/format'
-import { NoImage } from './NoImage'
 
 interface CollectionItemProps {
   pokemon: LocalPokemon
@@ -23,7 +22,9 @@ export function CollectionItem({ pokemon, onDelete }: CollectionItemProps) {
             loading="lazy"
           />
         ) : (
-          <NoImage label={`No sprite available for ${name}`} />
+          <div className="card__no-image" role="img" aria-label={`No sprite available for ${name}`}>
+            ?
+          </div>
         )}
       </div>
       <div className="collection-item__body">

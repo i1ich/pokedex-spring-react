@@ -270,27 +270,15 @@ img {
   height: auto;
 }
 
-.no-image {
-  position: relative;
+.card__no-image {
   display: grid;
   place-items: center;
   width: 72px;
   height: 72px;
-  color: var(--color-muted);
-}
-
-/* Both layers share one grid cell, so the question mark sits on the ball's centre. */
-.no-image > * {
-  grid-area: 1 / 1;
-}
-
-.no-image__ball {
-  opacity: 0.18;
-}
-
-.no-image__mark {
   font-size: 2rem;
-  line-height: 1;
+  color: var(--color-muted);
+  background: var(--color-chip-bg);
+  border-radius: 50%;
 }
 
 .card__id {
