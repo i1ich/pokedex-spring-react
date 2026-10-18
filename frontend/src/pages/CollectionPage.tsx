@@ -84,6 +84,10 @@ export function CollectionPage() {
   return (
     <>
       <h1>My collection</h1>
+      <p role="note" className="hint">
+        This collection is shared: every user sees the same Pokémon, and edits are visible to
+        everyone.
+      </p>
       {data && data.totalElements > 0 && (
         <p className="subtitle">{data.totalElements.toLocaleString('en-US')} Pokémon</p>
       )}

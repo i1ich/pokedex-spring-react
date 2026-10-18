@@ -125,6 +125,22 @@ describe('CollectionPage: list', () => {
     )
   })
 
+  it('says the collection is shared when it has entries', async () => {
+    backend({})
+
+    renderCollection()
+
+    expect(await screen.findByRole('note')).toHaveTextContent(/shared.*every user/i)
+  })
+
+  it('says the collection is shared when it is empty', async () => {
+    stubFetch(() => json(pageOf([], { totalElements: 0, totalPages: 0 })))
+
+    renderCollection()
+
+    expect(await screen.findByRole('note')).toHaveTextContent(/shared.*every user/i)
+  })
+
   it('shows an empty state with a link to Browse', async () => {
     stubFetch(() => json(pageOf([], { totalElements: 0, totalPages: 0 })))
 
