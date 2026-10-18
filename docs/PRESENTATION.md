@@ -29,7 +29,7 @@ How I read the ambiguous parts, and what each reading cost or bought:
 
 | Story | Endpoint | Auth | Rules that mattered |
 |---|---|---|---|
-| US01 | `GET /api/v1/pokemon?page&size` | public | `size` 1 to 50 (protects PokeAPI), zero-based `page`; 1 list call + 2 calls per Pokémon, in parallel; cached |
+| US01 | `GET /api/v1/pokemon?page&size&q` | public | `size` 1 to 50 (protects PokeAPI), zero-based `page`, optional `q` = name contains (PokeAPI cannot filter, so the cached list of all names is filtered here and only the shown page is enriched); 1 list call + 2 calls per Pokémon, in parallel; cached |
 | US02 | `GET /api/v1/pokemon/{idOrName}` | public | id/name `[a-z0-9-]{1,100}` (else 400); evolution chain is a **tree** (Eevee has eight children); missing species or chain degrades to a one-node chain instead of failing the page |
 | US03 | `POST /api/v1/local-pokemon/sync` | token | 201 + `Location` for new, 200 for a re-sync; re-sync keeps `localName`, `region`, `notes`, `tags`; unknown upstream is 404, upstream down is 502 |
 | US03 (read side) | `GET /api/v1/local-pokemon`, `/{id}` | token | the frontend needs a list and a single read |
@@ -162,7 +162,7 @@ Before: `docker compose up --build` has finished, `docker compose ps` shows thre
 |---|---|---|
 | 0:00 | Terminal: `docker compose ps`. | One command, three containers: PostgreSQL, Spring Boot API, nginx with the React build. All healthy |
 | 0:30 | **Browse.** Scroll the grid; click **Next**; note `?page=2` in the URL; press reload. | US01: paginated, 20 per page, page lives in the URL. The first uncached page calls PokeAPI in parallel; from here it is served from the Caffeine cache |
-| 1:15 | Open **Eevee** (go to `/pokemon/eevee`; there is no search box). Show artwork, stat meters, description; in the evolution tree click **Vaporeon**. | US02: stats, English description, evolution as a tree (eight branches), every node is a link |
+| 1:15 | Open **Eevee** (type `eevee` in the search box). Show artwork, stat meters, description; in the evolution tree click **Vaporeon**. | US02: stats, English description, evolution as a tree (eight branches), every node is a link |
 | 2:00 | Go to **Pikachu**, click **Add to my collection** while logged out. You land on **Login**; log in as `demo` / `demo12345`; you are returned to Pikachu; click **Add** again, then once more. | US03: protected, so anonymous users are sent to log in and come back. First click answers 201 "Added to your collection", the second 200 "Already in your collection". Idempotent |
 | 2:45 | Click **Edit your copy**. Local name `Sparky`, region `Kanto`, tags: type `Bad Tag` + Enter (rejected, stays in the field), then `electric`, `starter`. **Save changes.** | US04: client-side validation mirrors the server rules (lowercase kebab tags, limits); the server enforces them again. PokeAPI fields are shown read-only |
 | 3:30 | Open the edit page of Pikachu in two tabs. Save a change in tab 2. In tab 1 change the notes and **Save**: the banner "This Pokémon was edited elsewhere" appears and Save is disabled. Click **Reload**, then save. | Optimistic locking: tab 1 sent an old `version`, so the server answered 409 problem+json instead of overwriting. Reload refetches and restarts the form from the new record |
@@ -181,7 +181,7 @@ Details and the reasoning are in the README ([limitations](../README.md#known-li
 4. **Auth is simple:** demo credentials live in a normal Flyway migration; no refresh token or revocation (1 h TTL); the backend answers 401 for an expired token even on public routes, so the client only sends the token to protected calls.
 5. **Version in the body**, not `ETag`/`If-Match`; Jackson coerces scalars (`"localName": 123` is stored as `"123"`).
 6. **The first uncached Browse page is slow-ish** (1 list call + 2 calls per Pokémon).
-7. **Not done:** CI, Playwright end-to-end tests, a screen-reader pass, search and filters.
+7. **Not done:** CI, Playwright end-to-end tests, a screen-reader pass, filters by type or tag.
 
 ## 8. Questions I expect
 

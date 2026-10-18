@@ -2,7 +2,8 @@
 export const queryKeys = {
   pokemon: {
     all: ['pokemon'] as const,
-    page: (page: number, size: number) => ['pokemon', 'page', { page, size }] as const,
+    page: (page: number, size: number, q: string = '') =>
+      ['pokemon', 'page', { page, size, q }] as const,
     detail: (idOrName: string) => ['pokemon', 'detail', idOrName.trim().toLowerCase()] as const,
   },
   localPokemon: {

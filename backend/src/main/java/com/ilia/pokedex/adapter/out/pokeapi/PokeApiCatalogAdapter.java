@@ -31,6 +31,8 @@ import java.util.concurrent.Executor;
 public class PokeApiCatalogAdapter implements PokemonCatalog {
 
     private static final String ENGLISH = "en";
+    /** More than the number of Pokémon PokeAPI has, so one request returns every name. */
+    private static final int ALL_NAMES_LIMIT = 100_000;
 
     private final PokeApiClient client;
     private final Executor executor;
@@ -43,14 +45,30 @@ public class PokeApiCatalogAdapter implements PokemonCatalog {
     @Override
     public CatalogSlice findSlice(int offset, int limit) {
         PokemonListResponse list = client.fetchList(offset, limit);
-        List<NamedApiResource> results = list.results() == null ? List.of() : list.results();
+        return new CatalogSlice(summariesOf(list.results()), list.count());
+    }
 
+    /**
+     * PokeAPI cannot filter by name, so the (cached) list of every name is filtered here and only the
+     * requested page of matches is enriched.
+     */
+    @Override
+    public CatalogSlice searchByName(String nameFragment, int offset, int limit) {
+        PokemonListResponse all = client.fetchList(0, ALL_NAMES_LIMIT);
+        List<NamedApiResource> matches = (all.results() == null ? List.<NamedApiResource>of() : all.results()).stream()
+                .filter(entry -> entry.name().contains(nameFragment))
+                .toList();
+        int from = Math.min(offset, matches.size());
+        int to = Math.min(from + limit, matches.size());
+        return new CatalogSlice(summariesOf(matches.subList(from, to)), matches.size());
+    }
+
+    private List<PokemonSummary> summariesOf(List<NamedApiResource> entries) {
+        List<NamedApiResource> results = entries == null ? List.of() : entries;
         List<CompletableFuture<PokemonSummary>> futures = results.stream()
                 .map(entry -> CompletableFuture.supplyAsync(() -> toSummary(entry.name()), executor))
                 .toList();
-
-        List<PokemonSummary> items = futures.stream().map(PokeApiCatalogAdapter::join).toList();
-        return new CatalogSlice(items, list.count());
+        return futures.stream().map(PokeApiCatalogAdapter::join).toList();
     }
 
     @Override

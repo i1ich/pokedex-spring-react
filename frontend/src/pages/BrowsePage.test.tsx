@@ -37,8 +37,8 @@ describe('BrowsePage', () => {
     expect(view.getByText('6 kg')).toBeInTheDocument()
     const abilities = view.getAllByRole('listitem').map((li) => li.textContent)
     expect(abilities).toEqual(['Static', 'Lightning Rod'])
-    const artwork = view.getByRole('img', { name: 'Artwork of Pikachu' })
-    expect(artwork).toHaveAttribute('src', pikachu.artworkUrl)
+    const sprite = view.getByRole('img', { name: 'Sprite of Pikachu' })
+    expect(sprite).toHaveAttribute('src', pikachu.spriteUrl)
 
     expect(screen.getByRole('link', { name: 'Mr Mime' })).toHaveAttribute(
       'href',
@@ -153,6 +153,68 @@ describe('BrowsePage', () => {
 
     expect(await screen.findByRole('link', { name: 'Pikachu' })).toBeInTheDocument()
     expect(screen.queryByRole('alert')).not.toBeInTheDocument()
+  })
+
+  describe('search by name', () => {
+    it('sends ?q= to the API and keeps it in the pagination links', async () => {
+      const fetchMock = stubFetch(() =>
+        json(pageOf([pikachu], { page: 0, totalPages: 3, totalElements: 41 })),
+      )
+
+      renderWithProviders(<BrowsePage />, { route: '/?page=1&q=pika' })
+
+      await screen.findByRole('link', { name: 'Pikachu' })
+      expect(urlOf(fetchMock).searchParams.get('q')).toBe('pika')
+      expect(screen.getByText('41 Pokémon match “pika”')).toBeInTheDocument()
+      expect(screen.getByRole('searchbox', { name: /search by name/i })).toHaveValue('pika')
+      expect(screen.getByRole('link', { name: /next/i })).toHaveAttribute('href', '/?page=2&q=pika')
+    })
+
+    it('does not send q when there is no search', async () => {
+      const fetchMock = stubFetch(() => json(pageOf([pikachu])))
+
+      renderWithProviders(<BrowsePage />)
+
+      await screen.findByRole('link', { name: 'Pikachu' })
+      expect(urlOf(fetchMock).searchParams.has('q')).toBe(false)
+      expect(screen.queryByRole('link', { name: 'Clear' })).not.toBeInTheDocument()
+    })
+
+    it('searches from the first page when the form is submitted', async () => {
+      const fetchMock = stubFetch((url) =>
+        url.searchParams.get('q') === 'Char' ? json(pageOf([bulbasaur])) : json(pageOf([pikachu])),
+      )
+      renderWithProviders(<BrowsePage />, { route: '/?page=3' })
+      await screen.findByRole('link', { name: 'Pikachu' })
+
+      await userEvent.type(screen.getByRole('searchbox', { name: /search by name/i }), '  Char ')
+      await userEvent.click(screen.getByRole('button', { name: 'Search' }))
+
+      expect(await screen.findByRole('link', { name: 'Bulbasaur' })).toBeInTheDocument()
+      const last = urlOf(fetchMock, fetchMock.mock.calls.length - 1)
+      expect(last.searchParams.get('q')).toBe('Char')
+      expect(last.searchParams.get('page')).toBe('0')
+    })
+
+    it('clears the search with the Clear link', async () => {
+      stubFetch(() => json(pageOf([pikachu])))
+      renderWithProviders(<BrowsePage />, { route: '/?page=1&q=pika' })
+      await screen.findByRole('link', { name: 'Pikachu' })
+
+      expect(screen.getByRole('link', { name: 'Clear' })).toHaveAttribute('href', '/?page=1')
+    })
+
+    it('says so when nothing matches and offers to clear the search', async () => {
+      stubFetch(() => json(pageOf([], { page: 0, totalPages: 0, totalElements: 0 })))
+
+      renderWithProviders(<BrowsePage />, { route: '/?page=1&q=zzz' })
+
+      expect(await screen.findByText('No Pokémon match “zzz”.')).toBeInTheDocument()
+      expect(screen.getByRole('link', { name: 'Clear the search' })).toHaveAttribute(
+        'href',
+        '/?page=1',
+      )
+    })
   })
 
   it('explains an empty page and offers a way back', async () => {

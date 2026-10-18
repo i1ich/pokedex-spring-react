@@ -67,6 +67,30 @@ class PokemonControllerTest {
     }
 
     @Test
+    void searchesByNameWhenQIsGiven() throws Exception {
+        when(listPokemon.search("pika", 0, 20)).thenReturn(new PageResult<>(List.of(
+                new PokemonSummary(25, "pikachu", "https://img/25.png", null, "Mouse Pokémon", 60, List.of("static"))),
+                0, 20, 1));
+
+        mvc.perform(get("/api/v1/pokemon").param("q", "pika"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.items[0].name").value("pikachu"))
+                .andExpect(jsonPath("$.totalElements").value(1));
+
+        verify(listPokemon, never()).list(anyInt(), anyInt());
+    }
+
+    @Test
+    void aBlankQListsTheCatalogueInstead() throws Exception {
+        when(listPokemon.list(0, 20)).thenReturn(new PageResult<>(List.of(), 0, 20, 0));
+
+        mvc.perform(get("/api/v1/pokemon").param("q", "  "))
+                .andExpect(status().isOk());
+
+        verify(listPokemon).list(0, 20);
+    }
+
+    @Test
     void usesDefaultPaginationWhenParametersAreMissing() throws Exception {
         when(listPokemon.list(0, 20)).thenReturn(new PageResult<>(List.of(), 0, 20, 0));
 

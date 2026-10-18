@@ -93,6 +93,19 @@ img {
   color: var(--color-muted);
 }
 
+.search {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 16px;
+}
+
+.search .input {
+  flex: 1 1 220px;
+  width: auto;
+  max-width: 420px;
+}
+
 /* 4. Header / footer ------------------------------------------------------- */
 .skip-link {
   position: absolute;

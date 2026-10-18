@@ -36,6 +36,16 @@ public class CatalogSteps {
         context.remember(context.request().get("/api/v1/pokemon"));
     }
 
+    @When("a visitor searches the Pokémon list for {string}")
+    public void aVisitorSearches(String text) {
+        context.remember(context.request().queryParam("q", text).get("/api/v1/pokemon"));
+    }
+
+    @When("a visitor searches the Pokémon list for a text that is {int} letters long")
+    public void aVisitorSearchesForALongText(int length) {
+        aVisitorSearches("a".repeat(length));
+    }
+
     @Then("the page shows these Pokémon:")
     public void thePageShowsThesePokemon(DataTable expected) {
         JsonPath body = context.response().jsonPath();

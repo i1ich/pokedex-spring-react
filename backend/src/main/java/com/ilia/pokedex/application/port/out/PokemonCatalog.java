@@ -17,6 +17,14 @@ public interface PokemonCatalog {
     CatalogSlice findSlice(int offset, int limit);
 
     /**
+     * @param nameFragment lowercase text the Pokémon name must contain
+     * @param offset       zero-based index of the first match to return
+     * @param limit        maximum number of matches to return
+     * @return the matching entries (in catalogue order) plus the total number of matches
+     */
+    CatalogSlice searchByName(String nameFragment, int offset, int limit);
+
+    /**
      * @param idOrName PokeAPI id or lowercase name
      * @return the full detail view including the evolution chain
      * @throws com.ilia.pokedex.domain.exception.ResourceNotFoundException if no such Pokémon exists

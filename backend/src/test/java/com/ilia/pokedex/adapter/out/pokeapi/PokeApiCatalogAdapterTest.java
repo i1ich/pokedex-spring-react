@@ -13,6 +13,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.http.HttpMethod;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
+import org.springframework.test.web.client.ExpectedCount;
 import org.springframework.test.web.client.MockRestServiceServer;
 import org.springframework.web.client.RestClient;
 
@@ -56,6 +57,44 @@ class PokeApiCatalogAdapterTest {
                 new PokemonSummary(386, "deoxys-normal", "https://img.test/386.png", null, "DNA Pokémon", 608,
                         java.util.List.of("pressure")));
         assertThat(slice.items().get(0).weightKg()).isEqualTo(6.9);
+    }
+
+    @Test
+    void searchFiltersTheFullNameListAndOnlyEnrichesTheRequestedPage() {
+        expectJson("/pokemon?offset=0&limit=100000", "pokemon-list");
+        expectJson("/pokemon/deoxys-normal", "pokemon-deoxys-normal");
+        expectJson("/pokemon-species/386", "species-386");
+
+        CatalogSlice slice = adapter.searchByName("oxys", 0, 20);
+
+        server.verify();
+        assertThat(slice.totalCount()).isEqualTo(1);
+        assertThat(slice.items()).extracting(PokemonSummary::name).containsExactly("deoxys-normal");
+    }
+
+    @Test
+    void searchMatchesAnywhereInTheNameAndPagesTheMatches() {
+        expectJson("/pokemon?offset=0&limit=100000", "pokemon-list");
+        expectJson("/pokemon/deoxys-normal", "pokemon-deoxys-normal");
+        expectJson("/pokemon-species/386", "species-386");
+
+        // "a" is in both names; the second match is the whole second page of size 1.
+        CatalogSlice slice = adapter.searchByName("a", 1, 1);
+
+        server.verify();
+        assertThat(slice.totalCount()).isEqualTo(2);
+        assertThat(slice.items()).extracting(PokemonSummary::name).containsExactly("deoxys-normal");
+    }
+
+    @Test
+    void searchWithoutMatchesOrBeyondTheLastPageIsEmpty() {
+        server.expect(ExpectedCount.manyTimes(), requestTo(BASE_URL + "/pokemon?offset=0&limit=100000"))
+                .andRespond(withSuccess(json("pokemon-list"), MediaType.APPLICATION_JSON));
+
+        assertThat(adapter.searchByName("zzz", 0, 20).items()).isEmpty();
+        CatalogSlice beyond = adapter.searchByName("a", 40, 20);
+        assertThat(beyond.items()).isEmpty();
+        assertThat(beyond.totalCount()).isEqualTo(2);
     }
 
     @Test

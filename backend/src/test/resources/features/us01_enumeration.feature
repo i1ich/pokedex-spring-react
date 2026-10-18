@@ -19,6 +19,32 @@ Feature: US01 - Browse the Pokédex
     And every Pokémon on the page has a sprite
     And the list is page 0 of 651 with 1302 Pokémon in total
 
+  Scenario: A visitor finds Pokémon by part of their name
+    Given PokeAPI lists these Pokémon at offset 0 with limit 100000:
+      | bulbasaur     |
+      | deoxys-normal |
+      | pikachu       |
+      | eevee         |
+    When a visitor searches the Pokémon list for "OXY"
+    Then the response status is 200
+    And the page shows these Pokémon:
+      | id  | name          | category    | weightKg | abilities |
+      | 386 | deoxys-normal | DNA Pokémon | 60.8     | pressure  |
+    And the list is page 0 of 1 with 1 Pokémon in total
+
+  Scenario: A search that matches nothing returns an empty page
+    Given PokeAPI lists these Pokémon at offset 0 with limit 100000:
+      | bulbasaur |
+    When a visitor searches the Pokémon list for "zzz"
+    Then the response status is 200
+    And the list is page 0 of 0 with 0 Pokémon in total
+
+  Scenario: A search text longer than 50 characters is refused
+    When a visitor searches the Pokémon list for a text that is 51 letters long
+    Then the response is a problem with status 400 and title "Invalid request"
+    And the problem names the field "q"
+    And PokeAPI received no request
+
   Scenario: A visitor moves on to the next page
     Given PokeAPI lists these Pokémon at offset 2 with limit 2:
       | pikachu |

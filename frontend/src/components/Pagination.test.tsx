@@ -28,6 +28,18 @@ describe('Pagination', () => {
     expect(nav.getByText('Page 2 of 5')).toBeInTheDocument()
   })
 
+  it('keeps the name search in every link', () => {
+    render(
+      <MemoryRouter initialEntries={['/']}>
+        <Pagination page={2} totalPages={5} query="char" />
+      </MemoryRouter>,
+    )
+    const nav = within(screen.getByRole('navigation', { name: /pagination/i }))
+
+    expect(nav.getByRole('link', { name: /next/i })).toHaveAttribute('href', '/?page=3&q=char')
+    expect(nav.getByRole('link', { name: /first/i })).toHaveAttribute('href', '/?page=1&q=char')
+  })
+
   it('disables Previous and First on the first page', () => {
     const nav = renderPagination(1, 5)
 

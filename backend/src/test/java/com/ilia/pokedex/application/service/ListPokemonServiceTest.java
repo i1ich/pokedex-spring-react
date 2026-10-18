@@ -9,12 +9,15 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.params.ParameterizedTest;
 import org.junit.jupiter.params.provider.CsvSource;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
@@ -84,6 +87,47 @@ class ListPokemonServiceTest {
         when(catalog.findSlice(0, 50)).thenReturn(new CatalogSlice(List.of(), 0));
 
         assertThat(service.list(0, 50).size()).isEqualTo(50);
+    }
+
+    @Test
+    void searchesByTheTrimmedLowercaseFragmentWithTheOffsetOfThePage() {
+        when(catalog.searchByName("char", 20, 20)).thenReturn(new CatalogSlice(List.of(pikachu()), 45));
+
+        PageResult<PokemonSummary> result = service.search("  ChAr ", 1, 20);
+
+        verify(catalog).searchByName("char", 20, 20);
+        assertThat(result.items()).containsExactly(pikachu());
+        assertThat(result.totalElements()).isEqualTo(45);
+        assertThat(result.totalPages()).isEqualTo(3);
+    }
+
+    @ParameterizedTest
+    @NullAndEmptySource
+    @ValueSource(strings = {"   "})
+    void aBlankQueryListsTheWholeCatalogue(String query) {
+        when(catalog.findSlice(0, 20)).thenReturn(new CatalogSlice(List.of(pikachu()), 1302));
+
+        assertThat(service.search(query, 0, 20).totalElements()).isEqualTo(1302);
+
+        verify(catalog, never()).searchByName(anyString(), anyInt(), anyInt());
+    }
+
+    @Test
+    void rejectsAQueryLongerThanTheLimitWithoutCallingTheCatalogue() {
+        assertThatThrownBy(() -> service.search("a".repeat(51), 0, 20))
+                .isInstanceOf(InvalidRequestException.class)
+                .extracting(e -> ((InvalidRequestException) e).field())
+                .isEqualTo("q");
+
+        verify(catalog, never()).searchByName(anyString(), anyInt(), anyInt());
+    }
+
+    @Test
+    void validatesPaginationOfASearchToo() {
+        assertThatThrownBy(() -> service.search("pika", 0, 51))
+                .isInstanceOf(InvalidRequestException.class);
+
+        verify(catalog, never()).searchByName(anyString(), anyInt(), anyInt());
     }
 
     private static PokemonSummary pikachu() {

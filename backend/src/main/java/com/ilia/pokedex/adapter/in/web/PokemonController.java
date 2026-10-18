@@ -32,15 +32,21 @@ public class PokemonController {
     }
 
     @GetMapping
-    @Operation(summary = "List Pokémon", description = "One page of the PokeAPI catalogue, in PokeAPI order.")
+    @Operation(summary = "List Pokémon",
+            description = "One page of the PokeAPI catalogue, in PokeAPI order. With q, only Pokémon whose name contains it.")
     @ApiResponse(responseCode = "200", description = "A page of Pokémon")
     @ProblemResponses.BadRequest
     @ProblemResponses.BadGateway
     public PageResponse<PokemonSummaryResponse> list(
             @Parameter(description = "Zero-based page index") @RequestParam(defaultValue = "0") int page,
             @Parameter(description = "Page size, 1 to 50")
-            @RequestParam(defaultValue = "" + ListPokemonUseCase.DEFAULT_PAGE_SIZE) int size) {
-        return PageResponse.from(listPokemon.list(page, size), PokemonSummaryResponse::from);
+            @RequestParam(defaultValue = "" + ListPokemonUseCase.DEFAULT_PAGE_SIZE) int size,
+            @Parameter(description = "Case-insensitive part of the name, at most 50 characters", example = "char")
+            @RequestParam(required = false) String q) {
+        if (q == null || q.isBlank()) {
+            return PageResponse.from(listPokemon.list(page, size), PokemonSummaryResponse::from);
+        }
+        return PageResponse.from(listPokemon.search(q, page, size), PokemonSummaryResponse::from);
     }
 
     @GetMapping("/{idOrName}")

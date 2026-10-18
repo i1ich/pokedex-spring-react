@@ -53,7 +53,7 @@ On startup the backend copies Pokémon #1 to #12 from PokeAPI into the local col
 
 | Story | What the user gets | Backend | Frontend |
 |---|---|---|---|
-| **US01 Enumeration** | Browse all Pokémon, 20 per page, with sprite, name, id, category, weight and abilities | `GET /api/v1/pokemon?page&size` (public, size capped at 50) | `/` Browse page: card grid, pagination with the page in the URL (`?page=2`), loading skeletons, error banner with retry |
+| **US01 Enumeration** | Browse all Pokémon, 20 per page, with sprite, name, id, category, weight and abilities | `GET /api/v1/pokemon?page&size&q` (public, size capped at 50; `q` keeps names containing it, at most 50 characters) | `/` Browse page: card grid, search by part of a name (`?q=char`), pagination with the page in the URL (`?page=2`), loading skeletons, error banner with retry |
 | **US02 Detailed view** | Official artwork, types, height and weight, the six base stats, the English Pokédex description and the evolution tree (Eevee keeps all its branches) | `GET /api/v1/pokemon/{idOrName}` (public; id or lowercase name) | `/pokemon/:idOrName`: stat meters, clickable evolution tree |
 | **US03 Data synchronisation** | "Add to my collection" copies a Pokémon from PokeAPI into PostgreSQL. Idempotent: syncing again refreshes the PokeAPI fields and keeps the user's own fields | `POST /api/v1/local-pokemon/sync` (201 + `Location` for a new record, 200 for a re-sync), `GET /api/v1/local-pokemon`, `GET /api/v1/local-pokemon/{id}` | Button on the detail page (anonymous visitors are sent to log in and come back), `/collection` list |
 | **US04 Local modification** | Edit local name, region, notes and tags of your copy (PokeAPI data is read-only); delete it. Two people editing the same record never overwrite each other silently | `PUT /api/v1/local-pokemon/{id}` (200 / 400 / 404 / 409), `DELETE /api/v1/local-pokemon/{id}` (204 / 404) | `/collection/:id/edit`: validated form with tag chips, a "edited elsewhere" banner with Reload on 409; delete with a confirmation dialog and optimistic removal |
@@ -331,7 +331,7 @@ These are deliberate scope decisions or open items, listed so nobody has to disc
 4. **Make "refresh" real:** a cache-bypassing sync (or a shorter TTL for the sync path) so re-sync shows changed upstream data; consider a persistent or distributed cache if there is more than one instance.
 5. **CI** (build, `verify`, frontend checks, a coverage gate once the numbers are trusted) and image scanning; Dockerfile layer tuning.
 6. **Observability:** structured logs with a request id, Micrometer metrics for cache hit ratio and PokeAPI latency (the `caches` and `metrics` actuator endpoints are already exposed), alerting on the 502 rate.
-7. **Search and filters** on Browse (by name, type) and on the collection (by tag, region), which needs either a PokeAPI search strategy or a local index.
+7. **More search and filters**: Browse by type (name search exists) and the collection (by tag, region), which needs either a PokeAPI search strategy or a local index.
 8. **Accessibility pass with a screen reader** and end-to-end browser tests (Playwright) on top of the component tests.
 
 ## Repository layout
