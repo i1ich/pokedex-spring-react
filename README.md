@@ -9,6 +9,7 @@ Deliverables of the exercise:
 | The application | this repository (`backend/`, `frontend/`, `docker-compose.yml`) |
 | Presentation / thought process | [`docs/PRESENTATION.md`](docs/PRESENTATION.md) |
 | Architecture diagrams (Mermaid) | [`docs/architecture.md`](docs/architecture.md) |
+| Code tour: which files to open for each review criterion | [`docs/CODE_TOUR.md`](docs/CODE_TOUR.md) |
 | GenAI section (prompt, unedited AI output, review, corrected code) | [`genai/`](genai/README.md) |
 | Log of the AI prompts used to build this project | [`docs/ai-log/prompts.md`](docs/ai-log/prompts.md) |
 | Plan and task breakdown | [`docs/PLAN.md`](docs/PLAN.md), [`docs/TASKS.md`](docs/TASKS.md) |
@@ -53,8 +54,8 @@ On startup the backend copies Pokémon #1 to #12 from PokeAPI into the local col
 
 | Story | What the user gets | Backend | Frontend |
 |---|---|---|---|
-| **US01 Enumeration** | Browse all Pokémon, 20 per page, with sprite, name, id, category, weight and abilities | `GET /api/v1/pokemon?page&size&q` (public, size capped at 50; `q` keeps names containing it, at most 50 characters) | `/` Browse page: card grid, search by part of a name (`?q=char`), pagination with the page in the URL (`?page=2`), loading skeletons, error banner with retry |
-| **US02 Detailed view** | Official artwork, types, height and weight, the six base stats, the English Pokédex description and the evolution tree (Eevee keeps all its branches) | `GET /api/v1/pokemon/{idOrName}` (public; id or lowercase name) | `/pokemon/:idOrName`: stat meters, clickable evolution tree |
+| **US01 Enumeration** | Browse all Pokémon, 20 per page, with sprite, name, id, category, weight and abilities | `GET /api/v1/pokemon?page&size&q` (public, size capped at 50; `q` keeps names containing it, at most 50 characters) | `/` Browse page: card grid, search by part of a name (`?q=char`), pagination with the page in the URL (`?page=2`) and a "Go to page" jump, loading skeletons, error banner with retry. Each card shows the sprite, falls back to the official artwork when the sprite is missing or fails to load, then to a "?" placeholder |
+| **US02 Detailed view** | Official artwork, types, height and weight, the six base stats, the English Pokédex description and the evolution tree (Eevee keeps all its branches). The tree is a tree of species; a form you open (`pikachu-gmax`) is shown in place of its species | `GET /api/v1/pokemon/{idOrName}` (public; id or lowercase name; a species name that is not a Pokémon name, such as `maushold`, resolves to the species' default form) | `/pokemon/:idOrName`: stat meters, clickable evolution tree, "Back to Browse" returns to the page and search you came from |
 | **US03 Data synchronisation** | "Add to my collection" copies a Pokémon from PokeAPI into PostgreSQL. Idempotent: syncing again refreshes the PokeAPI fields and keeps the user's own fields | `POST /api/v1/local-pokemon/sync` (201 + `Location` for a new record, 200 for a re-sync), `GET /api/v1/local-pokemon`, `GET /api/v1/local-pokemon/{id}` | Button on the detail page (anonymous visitors are sent to log in and come back), `/collection` list |
 | **US04 Local modification** | Edit local name, region, notes and tags of your copy (PokeAPI data is read-only); delete it. Two people editing the same record never overwrite each other silently | `PUT /api/v1/local-pokemon/{id}` (200 / 400 / 404 / 409), `DELETE /api/v1/local-pokemon/{id}` (204 / 404) | `/collection/:id/edit`: validated form with tag chips, a "edited elsewhere" banner with Reload on 409; delete with a confirmation dialog and optimistic removal |
 | **Users** (the second collection) | Register, log in, stay signed in for the browser session | `POST /api/v1/auth/register`, `POST /api/v1/auth/login`, `GET /api/v1/auth/me` | `/login`, `/register`, protected routes |
@@ -174,8 +175,8 @@ Base path `/api/v1`. Interactive documentation and the OpenAPI document are gene
 
 | Method | Path | Auth | Success | Errors |
 |---|---|---|---|---|
-| GET | `/pokemon?page=0&size=20` | public | 200 page of `{id, name, spriteUrl, category, weightKg, abilities}` | 400 invalid `page`/`size`, 502 PokeAPI down |
-| GET | `/pokemon/{idOrName}` | public | 200 `{id, name, imageUrl, heightM, weightKg, types, stats[], description, evolutionChain}` | 400 malformed id, 404 unknown, 502 |
+| GET | `/pokemon?page=0&size=20&q=char` | public | 200 page of `{id, name, spriteUrl, artworkUrl, category, weightKg, abilities}`; `q` (optional) keeps names containing it | 400 invalid `page`/`size`/`q`, 502 PokeAPI down |
+| GET | `/pokemon/{idOrName}` | public | 200 `{id, name, imageUrl, heightM, weightKg, types, stats[], description, evolutionChain, speciesName}` | 400 malformed id, 404 unknown, 502 |
 | POST | `/auth/register` `{username, password}` | public | 201 `{username, role}` | 400, 409 username taken |
 | POST | `/auth/login` `{username, password}` | public | 200 `{token, expiresAt, username}` | 400, 401 (same message for unknown user and wrong password) |
 | GET | `/auth/me` | token | 200 `{username, role}` (read from the token) | 401 |
@@ -262,26 +263,26 @@ On macOS/Linux/Git Bash use `./mvnw` instead of `.\mvnw.cmd`. `mvnw verify` take
 | Level | Tooling | What it covers | Count |
 |---|---|---|---|
 | Domain | JUnit 5, AssertJ | `PokemonIdentifier`, `PageQuery`, `User` rules, `LocalPokemon` re-sync and update | 60 |
-| Application services | JUnit 5, Mockito, AssertJ | Every use case: valid path, each validation rule, not found, conflict, upstream failure, port interactions | 109 |
-| Web slice | `@WebMvcTest`, MockMvc, `@MockitoBean` | Status codes, JSON shape, problem details, bean validation, public vs protected routes, expired/forged/garbage tokens, CORS, 401/403 bodies | 95 |
-| Outbound HTTP | `MockRestServiceServer`, JSON fixtures in `src/test/resources/pokeapi` | PokeAPI mapping (Pikachu, Bulbasaur, branching Eevee, Ditto, Deoxys forms), 404, 5xx, cache hits | 20 |
+| Application services | JUnit 5, Mockito, AssertJ | Every use case: valid path, each validation rule, not found, conflict, upstream failure, port interactions | 116 |
+| Web slice | `@WebMvcTest`, MockMvc, `@MockitoBean` | Status codes, JSON shape, problem details, bean validation, public vs protected routes, expired/forged/garbage tokens, CORS, 401/403 bodies | 97 |
+| Outbound HTTP | `MockRestServiceServer`, JSON fixtures in `src/test/resources/pokeapi` | PokeAPI mapping (Pikachu, Bulbasaur, branching Eevee, Ditto, Deoxys forms), 404, 5xx, cache hits, name search, species-name fallback | 24 |
 | Other adapters and config | JUnit 5, `ApplicationContextRunner` | BCrypt, JWT issuing, `JwtProperties` (short secret fails start-up), demo seeder and its wiring | 43 |
 | Architecture | ArchUnit | The four dependency rules listed in `docs/architecture.md` | 4 |
-| **`mvn test` total** | | | **331** |
+| **`mvn test` total** | | | **344** |
 | Persistence | `@SpringBootTest` + Testcontainers PostgreSQL (`*IT`) | Flyway schema, mapping, versions, tags/abilities order, cascade delete, paging, lost-update and insert races | 18 |
 | End-to-end HTTP | Testcontainers, real HTTP | Register, login and protected call; update then stale replay gives 409; OpenAPI document and Swagger UI; background seeding with a fake PokeAPI | 58 |
-| Acceptance | Cucumber (6 feature files), RestAssured, WireMock as PokeAPI, Testcontainers | One feature per story (US01 to US04) plus auth and health, written in the language of the stories, with the 400/404/409 paths | 72 scenarios |
-| **Extra in `mvn verify`** | | | **148** |
-| Frontend | Vitest, Testing Library, jsdom | API client and problem parsing, session, auth context, protected routes, validation rules, each page including the 409 reload and the delete dialog; any `console.error`/`warn` fails a test | 259 (18 files) |
+| Acceptance | Cucumber (6 feature files), RestAssured, WireMock as PokeAPI, Testcontainers | One feature per story (US01 to US04) plus auth and health, written in the language of the stories, with the 400/404/409 paths | 75 scenarios |
+| **Extra in `mvn verify`** | | | **151** |
+| Frontend | Vitest, Testing Library, jsdom | API client and problem parsing, session, auth context, protected routes, validation rules, each page including the 409 reload and the delete dialog, search and Go to page, image fallbacks; any `console.error`/`warn` fails a test | 284 (20 files) |
 
-(The 72 Cucumber scenarios count each row of a Scenario Outline.) A separate project, [`genai/corrected`](genai/README.md), has its own 61 unit/web tests and 11 integration tests.
+(The 75 Cucumber scenarios count each row of a Scenario Outline.) A separate project, [`genai/corrected`](genai/README.md), has its own 61 unit/web tests and 11 integration tests.
 
 **Coverage** (reports only, there are no thresholds):
 
 | | Lines | Branches | Notes |
 |---|---|---|---|
-| Backend | 96.7 % (810 of 838) | 82.9 % (194 of 234) | JaCoCo 0.8.13 over `mvn verify`: unit, slice, IT and Cucumber merged into one report, `backend/target/site/jacoco/index.html`. Run `clean verify` for fresh numbers (the data file is appended to). `application.service` is at 100 % of lines and branches; the weakest branch coverage is in the adapters (about 74 %) |
-| Frontend | 97.8 % (1710 of 1748) | 93.6 % (497 of 531) | `@vitest/coverage-v8`, `npm run test:coverage`, `frontend/coverage/index.html`; 97.2 % of functions. Tests, test helpers and `main.tsx` are excluded |
+| Backend | 96.8 % (852 of 880) | 81.7 % (219 of 268) | JaCoCo 0.8.13 over `mvn verify`: unit, slice, IT and Cucumber merged into one report, `backend/target/site/jacoco/index.html`. Run `clean verify` for fresh numbers (the data file is appended to). `application.service` is at 100 % of lines and branches; the weakest branch coverage is in `domain.model` (about 73 %) and the adapters (about 77 %) |
+| Frontend | 97.9 % (1809 of 1847) | 93.8 % (525 of 560) | `@vitest/coverage-v8`, `npm run test:coverage`, `frontend/coverage/index.html`; 97.3 % of functions. Tests, test helpers and `main.tsx` are excluded |
 
 Coverage is a by-product here, not a goal: the tests were written first, one rule at a time (see the TDD walkthrough in [`docs/PRESENTATION.md`](docs/PRESENTATION.md)), and every rule in the story text has a test that names it.
 
@@ -303,6 +304,7 @@ Coverage is a by-product here, not a goal: the tests were written first, one rul
 | **Cucumber with WireMock for acceptance** | Specs read like the stories and run against the real HTTP stack without calling PokeAPI | About 40 s extra per `verify` |
 | **TanStack Query for server state, React Context only for auth** | Caching, invalidation and optimistic delete without a store | The token is also kept in a small non-React session store so a 401 can sign the user out from plain code |
 | **nginx proxy to the backend in Docker** | Same origin: no CORS, no API URL baked into the build | Swagger UI stays on port 8080 |
+| **Evolution tree of species, forms shown in place** | PokeAPI's `/evolution-chain` links species; Gigantamax, Mega, gender and regional forms are varieties of one species, not evolutions. The tree marks the form being viewed (`pikachu-gmax`) at its species' node | No list of a species' forms on the detail page yet |
 | **Background demo seeder** | An empty collection is a bad first impression; PokeAPI being down must not block start-up | A Pokémon deleted from the seed set returns on the next restart |
 
 ## Known limitations
@@ -340,7 +342,7 @@ These are deliberate scope decisions or open items, listed so nobody has to disc
 backend/            Spring Boot API (domain, application, adapter.in, adapter.out, config), Flyway migrations, tests
 frontend/           React + TypeScript + Vite app, Dockerfile, nginx.conf
 genai/              GenAI section: prompt.md, output/ (AI output as received), review.md, corrected/ (fixed code + tests)
-docs/               PLAN.md, TASKS.md, PRESENTATION.md, architecture.md, ai-log/prompts.md
+docs/               PLAN.md, TASKS.md, PRESENTATION.md, architecture.md, CODE_TOUR.md, ai-log/prompts.md
 docker-compose.yml  db + backend + frontend with health checks
 .env.example        optional settings for docker compose
 ```

@@ -273,3 +273,26 @@ Chronological log of the prompts used to build this project with Claude (agentic
 - Rejected from my own drafts, caught by checking against the sources: an "other adapters and config" test count of 36 (summing the surefire reports gives 43, which also makes the total 331); an invented disk-space requirement for Docker; a demo step that said to "search the grid" for Eevee although the app has no search; "13 issues, 6 fixed" for the GenAI review (`review.md` says items 1 to 6 and the test gap in 9 were corrected, so 7 corrected and 6 left open); an update sequence that showed the client's version in the SQL `WHERE`, when the adapter writes with the version the service just read (the service has already compared the two), and a diagram note that referred to a message number that autonumbering would have shifted.
 - Mermaid is only rendered by GitHub, which I cannot see from here, so every block in `README.md` and `docs/architecture.md` was parsed with the `mermaid` package under Node and jsdom (installed in a scratch folder outside the repository): all six parse. That proves the syntax, not the layout.
 - Left open: the 5-minute demo script was written from the code and from the orchestrator's browser pass, not clicked through again here; the stack was not rebuilt from a clean clone after the coverage commits (the two images were built successfully, the running containers were left untouched); the coverage numbers are from one local run and there is no CI; the README says in plain words that the collection is global and that re-sync can return cached data.
+
+---
+
+## 014 — Polishing after T11 from real use (interactive Claude Code session, Sat 17 – Sun 18 Oct 2026)
+
+**Prompt (summarised):** after T11 the owner clicked through the running Docker stack as a visitor and asked for one change at a time, interactively, instead of through a task file and a subagent. The requests were short and are summarised here from the commits, not quoted: stop an unchanged re-sync from making an open edit form stale; friendlier register hints and the demo login on the login page; fix 404s when clicking some species in an evolution tree; show the Pokémon being viewed when it is a form such as `pikachu-gmax`; never show a blank card when a picture is missing; let "Back to Browse" return to the same page; a way to jump to a page; search by name; make clear that the collection is shared; then two look-and-feel experiments.
+
+**Output (commits, all co-authored by Claude Sonnet 5.5):**
+
+- `94b8006` — `LocalPokemon` reports whether a re-sync changed anything and `SyncPokemonService` skips the save (and the `version` bump) when it did not; a test pins it. Login page shows `demo / demo12345`; register hints no longer quote byte or length limits (the server still enforces them).
+- `230719d` — `PokeApiCatalogAdapter` retries a `/pokemon/{name}` 404 through the species' default variety (maushold, oinkologne, toxtricity); details carry `speciesName` and the tree shows the viewed form at its species' node; cards fall back when a sprite fails to load (zygarde-mega); "Back to Browse" keeps the page.
+- `9b6fb7c` — red first (11 frontend failures and a backend compile error), then green: "Go to page" clamped to 1..totalPages; summaries carry `artworkUrl` and cards try each picture in turn, then a placeholder.
+- `64849b5`, `e11e9f1` — red first: a note on the collection page and in the delete dialog that the collection is shared by all users; README and presentation frame it as the reading of the brief.
+- `1ecee7e` — the grid goes back to sprite first, artwork as fallback.
+- `014d86e` — `GET /api/v1/pokemon?q=` (case-insensitive substring, at most 50 characters): the cached list of all names is filtered in the adapter and only the requested page of matches is enriched; a search box on Browse with `?q=` kept by pagination; tests on every layer plus Cucumber scenarios.
+- `0678bad`, reverted by `3b28ba8` — a faint Poké Ball placeholder; reverted, the plain "?" stays.
+
+**Review notes:**
+
+- Kept to the brief: artwork-first in the grid looked better but US01 asks for the sprite, so `1ecee7e` restored sprite-first. The evolution tree stays a tree of species, because PokeAPI's chain links species and Gigantamax, Mega and gender forms are varieties, not evolutions; the viewed form is marked in place instead of being added as a fake branch.
+- Not every commit here was red-first: `9b6fb7c`, `64849b5` and `e11e9f1` were; the others add or change tests in the same commit. Said plainly rather than relabelled.
+- Re-checked on Sun 18 Oct 2026 after the last commit, with `clean verify`: 344 tests in `mvn test`, 151 more in `verify` (76 JUnit ITs and 75 Cucumber scenarios), 284 frontend tests in 20 files, lint clean. Coverage: backend lines 96.8 % (852 of 880), branches 81.7 % (219 of 268); frontend lines 97.9 % (1809 of 1847), branches 93.8 % (525 of 560). README, `PRESENTATION.md` (new section 6) and `docs/CODE_TOUR.md` were updated in the same session to match.
+- Left open: no list of a species' forms on the detail page; the demo script was not clicked through again after these commits.

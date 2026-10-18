@@ -2,7 +2,7 @@
 
 This is the "thought process" document. It explains what I understood, what I decided and why, how the code was written test-first, how AI tools were used and checked, and a 5-minute demo script. Every claim points at something in the repository (commit hashes are real; `git show <hash>` works). Setup and reference material are in the [README](../README.md); diagrams are in [`architecture.md`](architecture.md).
 
-**Contents:** [1. The problem](#1-the-problem-as-i-understood-it) · [2. Stories to endpoints](#2-user-stories-to-endpoints) · [3. Architecture decisions](#3-architecture-decisions-and-alternatives) · [4. TDD walkthrough](#4-tdd-walkthrough) · [5. How AI was used](#5-how-ai-was-used-and-how-it-was-checked) · [6. Demo script](#6-demo-script-5-minutes) · [7. Known limitations](#7-known-limitations) · [8. Questions I expect](#8-questions-i-expect)
+**Contents:** [1. The problem](#1-the-problem-as-i-understood-it) · [2. Stories to endpoints](#2-user-stories-to-endpoints) · [3. Architecture decisions](#3-architecture-decisions-and-alternatives) · [4. TDD walkthrough](#4-tdd-walkthrough) · [5. How AI was used](#5-how-ai-was-used-and-how-it-was-checked) · [6. After T11](#6-after-t11-what-using-the-app-changed) · [7. Demo script](#7-demo-script-5-minutes) · [8. Known limitations](#8-known-limitations) · [9. Questions I expect](#9-questions-i-expect)
 
 ## 1. The problem as I understood it
 
@@ -90,7 +90,7 @@ What the tests caught that review might not have:
 - **A wrong example in my own test.** The Cucumber "name over 100 characters" case used 92 characters; the backend correctly answered 200, which is how the test failed. The example was fixed, not the rule.
 - **Console noise.** The frontend test setup fails any test that writes to `console.error` or `console.warn`, which turns "no warnings in the browser console" (React keys, `act()`, router) into an enforced rule.
 
-Totals now (see README for the table): 331 backend tests with `mvn test`, 148 more with `mvn verify` (76 JUnit integration tests and 72 Cucumber scenarios), 259 frontend tests. Backend line coverage 96.7 % and branch coverage 82.9 % (unit, IT and Cucumber merged), frontend lines 97.8 % and branches 93.6 %. These are by-products, measured once at the end with tooling added in the last commits.
+Totals now (see README for the table, measured on 18 Oct 2026 after the last commit): 344 backend tests with `mvn test`, 151 more with `mvn verify` (76 JUnit integration tests and 75 Cucumber scenarios), 284 frontend tests. Backend line coverage 96.8 % and branch coverage 81.7 % (unit, IT and Cucumber merged), frontend lines 97.9 % and branches 93.8 %. These are by-products, measured with tooling added in the last commits, not targets.
 
 ## 5. How AI was used and how it was checked
 
@@ -154,7 +154,25 @@ The whole application was built with **Claude Code**. An **orchestrator session 
 
 AI wrote nearly all the code and tests; my part was the specification, the decomposition into tasks, the architectural rules that make mistakes visible (ArchUnit, red-before-green commits, tests that fail on console noise), the review of each result and the final manual check. Where a claim could not be checked by running something, it is flagged as open in the log rather than asserted.
 
-## 6. Demo script (5 minutes)
+## 6. After T11: what using the app changed
+
+After the documentation task (T11) I used the running Docker stack the way a visitor would, in the browser, and changed what did not hold up. The work was done with Claude Code (the commits are co-authored by Claude Sonnet 5.5), one small commit per finding, with `mvnw verify` and the frontend checks green after each. Every behaviour change has tests; `9b6fb7c`, `64849b5` and `e11e9f1` were written red-first. Log entry 014 in [`ai-log/prompts.md`](ai-log/prompts.md) has the detail.
+
+| What I noticed | Why it mattered | Change | Commit |
+|---|---|---|---|
+| Someone pressing "Add to collection" on a Pokémon already stored made another user's open edit form fail with 409 | A re-sync saved the record and bumped `version` even when PokeAPI data had not changed, so a conflict appeared out of nowhere | A re-sync with unchanged data saves nothing (`LocalPokemon` decides, `SyncPokemonServiceTest` pins it) | `94b8006` |
+| Register hints talked about "72 bytes" and "3–50 characters" | Internal limits confuse a visitor; the server still enforces them | Plain-language hints; the demo login is shown under the login form | `94b8006` |
+| Clicking Maushold, Oinkologne or Toxtricity in an evolution tree gave 404 | Chains link species names, but `/pokemon/{name}` only knows form names (`maushold-family-of-four`) | A miss is retried through the species' default variety | `230719d` |
+| Opening `pikachu-gmax` showed a tree without the Pokémon being viewed | The tree is built from species; forms are not evolutions | Details carry `speciesName`; the viewed form is shown at its species' node | `230719d` |
+| Some cards were blank (`zygarde-mega` has a broken sprite upstream) | US01 asks for a picture on every card | Each failed image load moves to the next candidate, then a "?" placeholder | `230719d`, `9b6fb7c` |
+| "Back to Browse" always returned to page 1 | Losing your place in 1,300 entries | The link returns to the page and search you came from | `230719d` |
+| Hard to reach page 40 of the catalogue | Only Previous / Next | A "Go to page" field, clamped to 1..totalPages | `9b6fb7c` |
+| No way to find a Pokémon without paging | The catalogue is large | Search by part of a name: `q` on the API (the cached list of all names is filtered, only the shown page is enriched), a search box with `?q=` in the URL | `014d86e` |
+| It was not obvious that the collection is shared | A delete removes the record for everyone | A note on the collection page and in the delete dialog | `64849b5`, `e11e9f1` |
+
+Two changes were tried and undone on purpose: official artwork as the first picture in the grid (`9b6fb7c`) went back to sprite-first because US01 asks for the sprite (`1ecee7e`), and a faint Poké Ball placeholder (`0678bad`) was reverted in favour of the plain "?" (`3b28ba8`).
+
+## 7. Demo script (5 minutes)
 
 Before: `docker compose up --build` has finished, `docker compose ps` shows three healthy services, the browser is on http://localhost:3000, a second tab is ready. The database starts with Pokémon #1 to #12 in "My collection" (background seeder); Pikachu (#25) is not in it.
 
@@ -167,11 +185,11 @@ Before: `docker compose up --build` has finished, `docker compose ps` shows thre
 | 2:45 | Click **Edit your copy**. Local name `Sparky`, region `Kanto`, tags: type `Bad Tag` + Enter (rejected, stays in the field), then `electric`, `starter`. **Save changes.** | US04: client-side validation mirrors the server rules (lowercase kebab tags, limits); the server enforces them again. PokeAPI fields are shown read-only |
 | 3:30 | Open the edit page of Pikachu in two tabs. Save a change in tab 2. In tab 1 change the notes and **Save**: the banner "This Pokémon was edited elsewhere" appears and Save is disabled. Click **Reload**, then save. | Optimistic locking: tab 1 sent an old `version`, so the server answered 409 problem+json instead of overwriting. Reload refetches and restarts the form from the new record |
 | 4:15 | **My collection**: **Delete** on Pikachu, dialog opens with focus on Cancel; press Esc, open again, confirm. | Delete is optimistic with rollback, behind a confirmation dialog (keyboard accessible) |
-| 4:30 | http://localhost:8080/swagger-ui.html: open `GET /api/v1/local-pokemon` and **Try it out** without authorizing: 401 `application/problem+json`. Then show `docs/architecture.md` or run `.\mvnw.cmd verify` output from before. | Same error shape everywhere, including the security filter chain. 331 + 148 backend tests, 259 frontend tests, ArchUnit keeps the layers honest; the GenAI review is in `genai/` |
+| 4:30 | http://localhost:8080/swagger-ui.html: open `GET /api/v1/local-pokemon` and **Try it out** without authorizing: 401 `application/problem+json`. Then show `docs/architecture.md` or run `.\mvnw.cmd verify` output from before. | Same error shape everywhere, including the security filter chain. 344 + 151 backend tests, 284 frontend tests, ArchUnit keeps the layers honest; the GenAI review is in `genai/` |
 
 If PokeAPI is slow during the demo, reload once: the second request is cached. If the live conflict is fiddly, the same 409 is produced by `PUT` with an old `version` from Swagger UI after authorizing with a token from `/auth/login`.
 
-## 7. Known limitations
+## 8. Known limitations
 
 Details and the reasoning are in the README ([limitations](../README.md#known-limitations), [next steps](../README.md#what-i-would-do-next)). The ones I would raise first:
 
@@ -183,10 +201,11 @@ Details and the reasoning are in the README ([limitations](../README.md#known-li
 6. **The first uncached Browse page is slow-ish** (1 list call + 2 calls per Pokémon).
 7. **Not done:** CI, Playwright end-to-end tests, a screen-reader pass, filters by type or tag.
 
-## 8. Questions I expect
+## 9. Questions I expect
 
 - **Why not store everything locally and skip the cache?** The catalogue is over 1,300 entries of static data (1351 when I checked); copying it all would need a bulk import, and US03 is explicitly about copying a Pokémon on request. The cache gives fast browsing without owning the data.
 - **Why does a stale edit return 409 rather than merging?** The user's fields are replaced as a whole; merging would hide a conflict the user should see. The UI offers Reload.
 - **Why two version checks?** The service check gives a clear message and fails before touching the store; JPA `@Version` is the only thing that is atomic with the write.
 - **Is the AI-written code trustworthy?** Only as far as it was checked: every task ended with a full `verify` on `main` by someone other than the author, the architecture rules are tests, and the GenAI review shows what a careful run finds (code that did not compile, several behaviour bugs, a rule implemented twice).
+- **Why are Gigantamax, Mega or gender forms not in the evolution tree?** PokeAPI's evolution chain links species, and those forms are varieties of one species, not evolutions (Gigantamax and Mega are temporary battle transformations). Nidoran ♀ and ♂ are the exception that proves it: two species, two chains. The tree shows the form you opened at its species' node; a list of a species' forms on the detail page would be a natural addition.
 - **What would you do differently with more time?** Per-user ownership first, then `ETag`, refresh tokens and CI (README, "What I would do next").
