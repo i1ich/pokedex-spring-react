@@ -175,7 +175,7 @@ If PokeAPI is slow during the demo, reload once: the second request is cached. I
 
 Details and the reasoning are in the README ([limitations](../README.md#known-limitations), [next steps](../README.md#what-i-would-do-next)). The ones I would raise first:
 
-1. **The collection is global, not per user.** `local_pokemon` has no owner column, as designed in `PLAN.md`; every signed-in user sees and edits the same records. It is the first thing I would change.
+1. **The collection is shared, not per user.** The brief describes the local store as one replica of PokeAPI data (US03) and users only for authentication, so `local_pokemon` has no owner column, as designed in `PLAN.md`; every signed-in user sees and edits the same records, and the UI says so. Per-user ownership is the first thing I would add if the product needed it.
 2. **Re-sync can return cached data** inside the 6 h cache window, so "refreshed from PokeAPI" is only as fresh as the cache.
 3. **The seeder re-adds** #1 to #12 on the next restart if a user deleted them (`SEED_ENABLED=false`).
 4. **Auth is simple:** demo credentials live in a normal Flyway migration; no refresh token or revocation (1 h TTL); the backend answers 401 for an expired token even on public routes, so the client only sends the token to protected calls.

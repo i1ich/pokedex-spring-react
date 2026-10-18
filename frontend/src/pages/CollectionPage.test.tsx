@@ -170,6 +170,7 @@ describe('CollectionPage: delete', () => {
 
     const dialog = screen.getByRole('alertdialog', { name: /delete pikachu/i })
     expect(dialog).toHaveAccessibleDescription(/cannot be undone|sparky/i)
+    expect(dialog).toHaveAccessibleDescription(/shared collection.*every user/i)
     expect(within(dialog).getByRole('button', { name: 'Cancel' })).toHaveFocus()
 
     await userEvent.click(within(dialog).getByRole('button', { name: 'Cancel' }))

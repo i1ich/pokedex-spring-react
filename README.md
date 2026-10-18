@@ -309,7 +309,7 @@ Coverage is a by-product here, not a goal: the tests were written first, one rul
 
 These are deliberate scope decisions or open items, listed so nobody has to discover them.
 
-- **The collection is global, not per user.** `local_pokemon` has no owner column (as designed in `PLAN.md`); any signed-in user sees and edits the same collection. Per-user collections would be the first thing to change.
+- **The collection is shared, not per user.** The brief models the local store as one replica of PokeAPI data (US03) plus a separate user collection for authentication, so `local_pokemon` has no owner column (as designed in `PLAN.md`) and any signed-in user sees and edits the same records. The collection page and the delete dialog say so. Per-user collections would be the first thing to change if the product needed them.
 - **Re-sync can return cached data** (6 h TTL, see Caching), so the "refreshed from PokeAPI" message is true only up to the cache age.
 - **The seeder re-adds** any of #1 to #12 that a user deleted, on the next restart (`SEED_ENABLED=false` turns it off). It runs once per start and is not retried within a run.
 - **Demo credentials are in a normal Flyway migration** and the demo password appears in the OpenAPI description. Fine for a demo; remove both for a real deployment. The compose file has a dev-only `JWT_SECRET` default; set your own.

@@ -104,7 +104,7 @@ export function CollectionPage() {
           title={`Delete ${formatName(pendingDelete.name)}?`}
           message={`${formatName(pendingDelete.name)}${
             pendingDelete.localName ? ` (${pendingDelete.localName})` : ''
-          } will be removed from your collection, together with your local name, notes and tags. This cannot be undone.`}
+          } will be removed from the shared collection for every user, together with your local name, notes and tags. This cannot be undone.`}
           confirmLabel="Delete"
           onCancel={() => setPendingDelete(null)}
           onConfirm={() => {
