@@ -82,12 +82,26 @@ What to show: `hooks/useDeleteLocalPokemon.ts` (optimistic delete with rollback)
 
 ## 5. Commands to run live
 
-```bash
-docker compose up --build                 # the whole stack: http://localhost:3000, Swagger on :8080
-cd backend && ./mvnw test                 # 344 tests, no Docker (Windows: .\mvnw.cmd test)
-cd backend && ./mvnw verify               # + 76 ITs and 75 Cucumber scenarios on Testcontainers, about 2.5 min
-cd frontend && npm test                   # 284 tests
-git log --oneline --grep="\[red\]"        # the test-first commits
+Each line is a separate command, run from the repository root; do not paste the block in one go (the stack runs in the foreground, and the other commands change directory).
+
+Windows PowerShell (5.1 has no `&&`, and the wrapper is `mvnw.cmd`):
+
+```powershell
+docker compose up --build                       # the whole stack: http://localhost:3000, Swagger on :8080
+.\backend\mvnw.cmd -f backend\pom.xml test      # 344 tests, no Docker
+.\backend\mvnw.cmd -f backend\pom.xml verify    # + 76 ITs and 75 Cucumber scenarios on Testcontainers, about 2.5 min
+npm --prefix frontend test                      # 284 tests
+git log --oneline --grep="\[red\]"              # the test-first commits
 ```
 
-Tip for the review: run `verify` once before the call and keep the output, because it takes a few minutes; run `mvnw test` live if asked.
+macOS, Linux or Git Bash:
+
+```bash
+docker compose up --build
+./backend/mvnw -f backend/pom.xml test
+./backend/mvnw -f backend/pom.xml verify
+npm --prefix frontend test
+git log --oneline --grep="\[red\]"
+```
+
+Tip for the review: run `verify` once before the call and keep the output, because it takes a few minutes; run `mvnw test` live if asked. Keep `docker compose up` in its own terminal.

@@ -188,7 +188,7 @@ Base path `/api/v1`. Interactive documentation and the OpenAPI document are gene
 
 Also public: `GET /actuator/health`. Other actuator endpoints (`info`, `caches`, `metrics`) are exposed but need a token. A page response is always `{items, page, size, totalElements, totalPages}`; `page` is zero-based.
 
-A short session with curl (a stack from `docker compose up` is running):
+A short session with curl (a stack from `docker compose up` is running; bash, macOS/Linux or Git Bash):
 
 ```bash
 # public: one page, then Eevee with its eight evolutions
@@ -197,7 +197,8 @@ curl "http://localhost:8080/api/v1/pokemon/eevee"
 
 # log in, keep the token
 TOKEN=$(curl -s -X POST http://localhost:8080/api/v1/auth/login \
-  -H "Content-Type: application/json" -d '{"username":"demo","password":"demo12345"}' | jq -r .token)
+  -H "Content-Type: application/json" -d '{"username":"demo","password":"demo12345"}' \
+  | sed -E 's/.*"token":"([^"]+)".*/\1/')
 
 # copy Pikachu into the collection (201 the first time), then personalise it with the version it came with
 curl -i -X POST http://localhost:8080/api/v1/local-pokemon/sync \
@@ -208,7 +209,24 @@ curl -X PUT http://localhost:8080/api/v1/local-pokemon/25 \
 # repeating the same PUT now answers 409: the record is at version 1
 ```
 
-(PowerShell: use `curl.exe`, and put the JSON in a single-quoted string with the inner quotes escaped as `\"`, or use Swagger UI.)
+The same session in Windows PowerShell, where `curl` is an alias of `Invoke-WebRequest` and `&&` and `\` line continuations do not exist:
+
+```powershell
+# public: one page, then Eevee with its eight evolutions
+Invoke-RestMethod "http://localhost:8080/api/v1/pokemon?page=0&size=2"
+Invoke-RestMethod "http://localhost:8080/api/v1/pokemon/eevee"
+
+# log in, keep the token
+$login = Invoke-RestMethod -Method Post http://localhost:8080/api/v1/auth/login -ContentType "application/json" -Body '{"username":"demo","password":"demo12345"}'
+$auth = @{ Authorization = "Bearer $($login.token)" }
+
+# copy Pikachu into the collection (StatusCode 201 the first time), then personalise it with the version it came with
+Invoke-WebRequest -UseBasicParsing -Method Post http://localhost:8080/api/v1/local-pokemon/sync -Headers $auth -ContentType "application/json" -Body '{"idOrName":"pikachu"}' | Select-Object StatusCode
+Invoke-RestMethod -Method Put http://localhost:8080/api/v1/local-pokemon/25 -Headers $auth -ContentType "application/json" -Body '{"localName":"Sparky","region":"Kanto","notes":"Found near Viridian","tags":["electric","starter"],"version":0}'
+# repeating the same PUT now throws a 409: the record is at version 1
+```
+
+Or use Swagger UI (**Authorize** with the token from `/auth/login`).
 
 ## Error format
 
@@ -248,7 +266,7 @@ PokeAPI responses are cached in memory with Caffeine through Spring Cache, in `P
 ## Testing
 
 ```powershell
-# Windows PowerShell
+# Windows PowerShell, from the repository root
 cd backend
 .\mvnw.cmd test       # unit, web-slice, HTTP-adapter, caching, architecture: no Docker needed
 .\mvnw.cmd verify     # + integration tests and Cucumber on PostgreSQL via Testcontainers (Docker required)
